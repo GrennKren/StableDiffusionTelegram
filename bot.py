@@ -110,7 +110,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
-    seed = [seed] if type(seed) != type([]) else seed
+    seed = seed if u_number_images <= 1 else 'Empty'
     return images, seed
 
 
@@ -125,7 +125,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
