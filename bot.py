@@ -26,6 +26,9 @@ GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 
+#user variables
+OPTIONS_U = {}
+
 # load the text2img pipeline
 pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 pipe = pipe.to("cpu")
@@ -110,7 +113,20 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
-
+async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
+    if len(context.args) < 1:
+        result = OPTIONS_U.get(update.message.from_user['id']).get(command)
+        if result == none:
+            await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
+        else:
+            await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
+    else:
+        if OPTIONS_U.get(update.message.from_user['id']) == None:
+            OPTIONS_U.get(update.message.from_user['id']) = {}
+        OPTIONS_U.get(update.message.from_user['id'])[command] = context.args[0]
+        await update.message.reply_text(f'successfully updated {command} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
+    return
+            
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
@@ -138,6 +154,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
+
+app.add_handler(CommandHandler("safety", anyCommand, command="SAFETY_CHECKER"))
+app.add_handler(CommandHandler("steps", anyCommand, command="NUM_INFERENCE_STEPS"))
+app.add_handler(CommandHandler("strength", anyCommand, command="STRENTH"))
+app.add_handler(CommandHandler("guidance_scale", anyCommand, command="GUIDANCE_SCALE"))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
