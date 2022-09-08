@@ -109,8 +109,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     return images, seed
 
 
-async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get(command)
+async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
+    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
@@ -132,7 +132,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
-    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get(command)
+    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
