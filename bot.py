@@ -106,6 +106,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     width=width,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"][0]
+            
+    images = [images] if type(images) != type([]) else images
     return images, seed
 
 
