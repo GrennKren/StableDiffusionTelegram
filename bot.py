@@ -80,10 +80,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
     u_number_images = OPTIONS_U.get(user_id).get('NUMBER_IMAGES')
     
-    u_strength = u_strength if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
-    u_guidance_scale = u_guidance_scale if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
-    u_num_inference_steps = u_num_inference_steps if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
-    u_number_images = u_number_images if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else number_images
+    u_strength = float(u_strength) if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
+    u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
+    u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
+    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else number_images
     
     if photo is not None:
         pipe.to("cpu")
@@ -96,7 +96,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     generator=generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps)["sample"][0]
+                                    num_inference_steps=u_num_inference_steps)["sample"]
     else:
         pipe.to("cuda")
         img2imgPipe.to("cpu")
@@ -107,7 +107,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     height=height,
                                     width=width,
                                     guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps)["sample"][0]
+                                    num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
     seed = [seed] if type(seed) != type([]) else seed
