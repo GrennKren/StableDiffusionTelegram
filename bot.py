@@ -142,7 +142,12 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
-async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
+async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    command = {
+        "steps" : "NUM_INFERENCE_STEPS", 
+        "strength" : "STRENTH", 
+        "guidance_scale" : "GUIDANCE_SCALE", 
+        "number" : "NUMBER_IMAGES"}[context.args[0]]
     if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(command)
         if result == none:
@@ -184,10 +189,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("steps", anyCommands, command="NUM_INFERENCE_STEPS"))
-app.add_handler(CommandHandler("strength", anyCommands, command="STRENTH"))
-app.add_handler(CommandHandler("guidance_scale", anyCommands, command="GUIDANCE_SCALE"))
-app.add_handler(CommandHandler("number", anyCommands, command="NUMBER_IMAGES"))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number"], anyCommands))
+app.add_handler(CommandHandler("steps", anyCommands, command=))
+app.add_handler(CommandHandler(, anyCommands, command=))
+app.add_handler(CommandHandler(, anyCommands, command=))
+app.add_handler(CommandHandler(, anyCommands, command=))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
