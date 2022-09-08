@@ -80,10 +80,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
     u_number_images = OPTIONS_U.get(user_id).get('NUMBER_IMAGES')
     
-    u_strength = u_strength if isFloat(u_strength) and u_strength >= 0 and u_strength <= 1 else strength
-    u_guidance_scale = u_guidance_scale if isFloat(u_guidance_scale) and u_guidance_scale >= 1 and u_strength <= 8 else guidance_scale
-    u_num_inference_steps = u_num_inference_steps if isInt(u_num_inference_steps) and u_num_inference_steps >= 50 and u_num_inference_steps <= 150 else num_inference_steps
-    u_number_images = u_number_images if isInt(u_number_images) and u_number_images >= 1 and u_number_images <= 4 else number_images
+    u_strength = u_strength if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
+    u_guidance_scale = u_guidance_scale if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
+    u_num_inference_steps = u_num_inference_steps if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
+    u_number_images = u_number_images if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else number_images
     
     if photo is not None:
         pipe.to("cpu")
@@ -119,7 +119,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
        OPTIONS_U[update.message.from_user['id']] = {}
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
-    u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    u_number_images = u_number_images if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
@@ -148,7 +148,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         return
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
-    u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    u_number_images = u_number_images if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
