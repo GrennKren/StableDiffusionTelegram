@@ -169,6 +169,8 @@ async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await anyCommands('NUMBER_IMAGES', update=update, context=context)
  
 async def anyCommands(options, update, context) -> None:
+    if OPTIONS_U.get(update.message.from_user['id']) == None:
+       OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == none:
