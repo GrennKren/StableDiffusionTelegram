@@ -110,24 +110,34 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if OPTIONS_U.get(update.message.from_user['id']) == None:
+       OPTIONS_U[update.message.from_user['id']] = {}
+    
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = await generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for value in im:
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if OPTIONS_U.get(update.message.from_user['id']) == None:
+       OPTIONS_U[update.message.from_user['id']] = {}
+    
     if len(context.args) < 2:
         await update.message.reply_text("The prompt was not added", reply_to_message_id=update.message.message_id)
         return
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = await generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=1, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for value in im:
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if OPTIONS_U.get(update.message.from_user['id']) == None:
+       OPTIONS_U[update.message.from_user['id']] = {}
     if update.message.caption is None:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
@@ -140,9 +150,12 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     im, seed = await generate_image(prompt=update.message.caption, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for value in im:
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if OPTIONS_U.get(update.message.from_user['id']) == None:
+       OPTIONS_U[update.message.from_user['id']] = {}
     command = {
         "steps" : "NUM_INFERENCE_STEPS", 
         "strength" : "STRENTH", 
@@ -155,8 +168,6 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         else:
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
     else:
-        if OPTIONS_U.get(update.message.from_user['id']) == None:
-            OPTIONS_U[update.message.from_user['id']] = {}
         OPTIONS_U[update.message.from_user['id']][command] = context.args[0]
         await update.message.reply_text(f'successfully updated {command} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
