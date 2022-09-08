@@ -186,15 +186,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
             prompt = replied_message.caption
-            im, seed = generate_image(prompt, photo=photo)
+            im, seed = generate_image(prompt, photo=photo, number_images=1)
         else:
             prompt = replied_message.text
-            im, seed = generate_image(prompt)
+            im, seed = generate_image(prompt, number_images=1)
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         prompt = replied_message.text if replied_message.text is not None else replied_message.caption
-        im, seed = generate_image(prompt, photo=photo)
+        im, seed = generate_image(prompt, photo=photo, number_images=1)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{prompt}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
 
