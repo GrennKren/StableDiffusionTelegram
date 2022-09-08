@@ -22,6 +22,7 @@ WIDTH = int(os.getenv('WIDTH', '512'))
 NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
 STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
+NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
@@ -43,6 +44,19 @@ if not SAFETY_CHECKER:
     pipe.safety_checker = dummy_checker
     img2imgPipe.safety_checker = dummy_checker
 
+def isInt(input):
+    try:
+       int(input)
+       return True
+    except:
+       return False
+
+def isFloat(input):
+    try:
+       float(input)
+       return True
+    except:
+       return False
 
 def image_to_bytes(image):
     bio = BytesIO()
@@ -57,10 +71,18 @@ def get_try_again_markup():
     return reply_markup
 
 
-def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, photo=None):
+def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=NUMBER_IMAGES, user_id=None, photo=None):
     seed = seed if seed is not None else random.randint(1, 10000)
     generator = torch.cuda.manual_seed_all(seed)
-
+    
+    u_strength = OPTIONS_U.get(user_id).get('STRENTH')
+    u_guidance_scale = OPTIONS_U.get(user_id).get('GUIDANCE_SCALE')
+    u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
+    
+    u_strength = u_strength if isFloat(u_strength) and u_strength >= 0 and u_strength <= 1 else strength
+    u_guidance_scale = u_guidance_scale if isFloat(u_guidance_scale) and u_guidance_scale >= 1 and u_strength <= 8 else guidance_scale
+    u_num_inference_steps = u_num_inference_steps if isInt(u_num_inference_steps) and u_num_inference_steps >= 50 and u_num_inference_steps <= 150 else num_inference_steps
+    
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
@@ -68,28 +90,31 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = init_image.resize((height, width))
         init_image = preprocess(init_image)
         with autocast("cuda"):
-            image = img2imgPipe(prompt=[prompt], init_image=init_image,
-                                    generator=generator,
-                                    strength=strength,
-                                    guidance_scale=guidance_scale,
-                                    num_inference_steps=num_inference_steps)["sample"][0]
+            images = img2imgPipe(prompt=[prompt] * number_images, init_image=init_image,
+                                    generator=generator if number_images == 1 else None,
+                                    strength=u_strength,
+                                    guidance_scale=u_guidance_scale,
+                                    num_inference_steps=u_num_inference_steps)["sample"][0]
     else:
         pipe.to("cuda")
         img2imgPipe.to("cpu")
         with autocast("cuda"):
-            image = pipe(prompt=[prompt],
-                                    generator=generator,
-                                    strength=strength,
+            images = pipe(prompt=[prompt] * number_images,
+                                    generator=generator if number_images == 1 else None,
+                                    strength=u_strength,
                                     height=height,
                                     width=width,
-                                    guidance_scale=guidance_scale,
-                                    num_inference_steps=num_inference_steps)["sample"][0]
-    return image, seed
+                                    guidance_scale=u_guidance_scale,
+                                    num_inference_steps=u_num_inference_steps)["sample"][0]
+    return images, seed
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    u_number_images = await OPTIONS_U.get(update.message.from_user['id']).get(command)
+    u_number_images = await u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
-    im, seed = generate_image(prompt=update.message.text)
+    im, seed = await generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
@@ -98,7 +123,7 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
         await update.message.reply_text("The prompt was not added", reply_to_message_id=update.message.message_id)
         return
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
-    im, seed = generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0])
+    im, seed = await generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=1, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
@@ -106,24 +131,28 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if update.message.caption is None:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
+    
+    u_number_images = await OPTIONS_U.get(update.message.from_user['id']).get(command)
+    u_number_images = await u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
-    im, seed = generate_image(prompt=update.message.caption, photo=photo)
+    im, seed = await generate_image(prompt=update.message.caption, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
     if len(context.args) < 1:
-        result = OPTIONS_U.get(update.message.from_user['id']).get(command)
+        result = await OPTIONS_U.get(update.message.from_user['id']).get(command)
         if result == none:
             await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
         else:
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
     else:
         if OPTIONS_U.get(update.message.from_user['id']) == None:
-            OPTIONS_U.get(update.message.from_user['id']) = {}
-        OPTIONS_U.get(update.message.from_user['id'])[command] = context.args[0]
+            await OPTIONS_U.get(update.message.from_user['id']) = {}
+        await OPTIONS_U.get(update.message.from_user['id'])[command] = context.args[0]
         await update.message.reply_text(f'successfully updated {command} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
             
@@ -155,10 +184,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("safety", anyCommand, command="SAFETY_CHECKER"))
 app.add_handler(CommandHandler("steps", anyCommand, command="NUM_INFERENCE_STEPS"))
 app.add_handler(CommandHandler("strength", anyCommand, command="STRENTH"))
 app.add_handler(CommandHandler("guidance_scale", anyCommand, command="GUIDANCE_SCALE"))
+app.add_handler(CommandHandler("number", anyCommand, command="NUMBER_IMAGES"))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
