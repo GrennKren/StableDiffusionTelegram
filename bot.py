@@ -139,7 +139,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed, pass_args=True))
+app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 app.add_handler(CallbackQueryHandler(button))
