@@ -109,7 +109,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     return images, seed
 
 
-async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
+async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
