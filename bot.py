@@ -158,14 +158,17 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
-async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if OPTIONS_U.get(update.message.from_user['id']) == None:
-       OPTIONS_U[update.message.from_user['id']] = {}
-    options = {
-        "steps" : "NUM_INFERENCE_STEPS", 
-        "strength" : "STRENTH", 
-        "guidance_scale" : "GUIDANCE_SCALE", 
-        "number" : "NUMBER_IMAGES"}[command]
+        
+async def anySteps(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    anyCommands('NUM_INFERENCE_STEPS')
+async def anyStrength(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    anyCommands('STRENTH')
+async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    anyCommands('GUIDANCE_SCALE')
+async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    anyCommands('NUMBER_IMAGES')
+ 
+def anyCommands(options) -> None:
     if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == none:
@@ -205,7 +208,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number"], anyCommands))
+app.add_handler(CommandHandler("steps", anySteps))
+app.add_handler(CommandHandler("strength", anyStrength))
+app.add_handler(CommandHandler("guidance_scale", anyGuidance_scale))
+app.add_handler(CommandHandler("number", anyNumber))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
