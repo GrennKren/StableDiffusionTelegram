@@ -71,7 +71,7 @@ def get_try_again_markup():
     return reply_markup
 
 
-def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=NUMBER_IMAGES, user_id=None, photo=None):
+def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images, user_id=None, photo=None):
     seed = seed if seed is not None else random.randint(1, 10000)
     generator = torch.cuda.manual_seed_all(seed)
     
@@ -83,7 +83,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_strength = float(u_strength) if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
     u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
-    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else number_images
+    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
     
     if photo is not None:
         pipe.to("cpu")
@@ -136,8 +136,12 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
     if len(context.args) < 2:
         await update.message.reply_text("The prompt was not added", reply_to_message_id=update.message.message_id)
         return
+    
+    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')    
+    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES    
+    
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
-    im, seed = generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=1, user_id=update.message.from_user['id'])
+    im, seed = generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{" ".join(context.args[1:])}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
@@ -196,15 +200,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
             prompt = replied_message.caption
-            im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.message.from_user['id'])
+            prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
+            im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.from_user['id'])
         else:
             prompt = replied_message.text
-            im, seed = generate_image(prompt, number_images=1, user_id=update.message.from_user['id'])
+            prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
+            im, seed = generate_image(prompt, number_images=1, user_id=replied_message.from_user['id'])
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         prompt = replied_message.text if replied_message.text is not None else replied_message.caption
-        im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.message.from_user['id'])
+        prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
+        im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
 
