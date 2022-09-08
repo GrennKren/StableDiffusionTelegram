@@ -151,8 +151,8 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, comman
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
     else:
         if OPTIONS_U.get(update.message.from_user['id']) == None:
-            OPTIONS_U.get(update.message.from_user['id']) = {}
-        await OPTIONS_U.get(update.message.from_user['id'])[command] = context.args[0]
+            OPTIONS_U[update.message.from_user['id']] = {}
+        await OPTIONS_U[update.message.from_user['id']][command] = context.args[0]
         await update.message.reply_text(f'successfully updated {command} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
             
