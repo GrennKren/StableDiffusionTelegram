@@ -184,10 +184,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("steps", anyCommand, command="NUM_INFERENCE_STEPS"))
-app.add_handler(CommandHandler("strength", anyCommand, command="STRENTH"))
-app.add_handler(CommandHandler("guidance_scale", anyCommand, command="GUIDANCE_SCALE"))
-app.add_handler(CommandHandler("number", anyCommand, command="NUMBER_IMAGES"))
+app.add_handler(CommandHandler("steps", anyCommands, command="NUM_INFERENCE_STEPS"))
+app.add_handler(CommandHandler("strength", anyCommands, command="STRENTH"))
+app.add_handler(CommandHandler("guidance_scale", anyCommands, command="GUIDANCE_SCALE"))
+app.add_handler(CommandHandler("number", anyCommands, command="NUMBER_IMAGES"))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
