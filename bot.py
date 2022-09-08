@@ -160,13 +160,13 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
 
         
 async def anySteps(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    anyCommands('NUM_INFERENCE_STEPS')
+    await anyCommands('NUM_INFERENCE_STEPS')
 async def anyStrength(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    anyCommands('STRENTH')
+    await anyCommands('STRENTH')
 async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    anyCommands('GUIDANCE_SCALE')
+    await anyCommands('GUIDANCE_SCALE')
 async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    anyCommands('NUMBER_IMAGES')
+    await anyCommands('NUMBER_IMAGES')
  
 async def anyCommands(options) -> None:
     if len(context.args) < 1:
