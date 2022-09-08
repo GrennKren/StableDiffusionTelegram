@@ -110,8 +110,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    u_number_images = await OPTIONS_U.get(update.message.from_user['id']).get(command)
-    u_number_images = await u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get(command)
+    u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = await generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
@@ -132,8 +132,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
-    u_number_images = await OPTIONS_U.get(update.message.from_user['id']).get(command)
-    u_number_images = await u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
+    u_number_images = OPTIONS_U.get(update.message.from_user['id']).get(command)
+    u_number_images = u_number_images if isInt(u_number_images) and u_number_images <= 4 and u_number_images > 0 else NUMBER_IMAGES
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
@@ -144,7 +144,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
 
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, command) -> None:
     if len(context.args) < 1:
-        result = await OPTIONS_U.get(update.message.from_user['id']).get(command)
+        result = OPTIONS_U.get(update.message.from_user['id']).get(command)
         if result == none:
             await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
         else:
@@ -152,7 +152,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE, comman
     else:
         if OPTIONS_U.get(update.message.from_user['id']) == None:
             OPTIONS_U[update.message.from_user['id']] = {}
-        await OPTIONS_U[update.message.from_user['id']][command] = context.args[0]
+        OPTIONS_U[update.message.from_user['id']][command] = context.args[0]
         await update.message.reply_text(f'successfully updated {command} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
             
