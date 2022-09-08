@@ -89,6 +89,15 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     im, seed = generate_image(prompt=update.message.text)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    
+async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if len(context.args) < 2:
+        await update.message.reply_text("The prompt was not added", reply_to_message_id=update.message.message_id)
+        return
+    progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
+    im, seed = generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0])
+    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+    await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message.caption is None:
@@ -130,6 +139,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
+app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed, pass_args=True))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 app.add_handler(CallbackQueryHandler(button))
