@@ -78,10 +78,12 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_strength = OPTIONS_U.get(user_id).get('STRENTH')
     u_guidance_scale = OPTIONS_U.get(user_id).get('GUIDANCE_SCALE')
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
+    u_number_images = OPTIONS_U.get(user_id).get('NUMBER_IMAGES')
     
     u_strength = u_strength if isFloat(u_strength) and u_strength >= 0 and u_strength <= 1 else strength
     u_guidance_scale = u_guidance_scale if isFloat(u_guidance_scale) and u_guidance_scale >= 1 and u_strength <= 8 else guidance_scale
     u_num_inference_steps = u_num_inference_steps if isInt(u_num_inference_steps) and u_num_inference_steps >= 50 and u_num_inference_steps <= 150 else num_inference_steps
+    u_number_images = u_number_images if isInt(u_number_images) and u_number_images >= 1 and u_number_images <= 4 else number_images
     
     if photo is not None:
         pipe.to("cpu")
@@ -90,8 +92,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = init_image.resize((height, width))
         init_image = preprocess(init_image)
         with autocast("cuda"):
-            images = img2imgPipe(prompt=[prompt] * number_images, init_image=init_image,
-                                    generator=generator if number_images == 1 else None,
+            images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
+                                    generator=generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"][0]
@@ -99,8 +101,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         pipe.to("cuda")
         img2imgPipe.to("cpu")
         with autocast("cuda"):
-            images = pipe(prompt=[prompt] * number_images,
-                                    generator=generator if number_images == 1 else None,
+            images = pipe(prompt=[prompt] * u_number_images,
+                                    generator=generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     height=height,
                                     width=width,
