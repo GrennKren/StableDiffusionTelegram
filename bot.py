@@ -71,7 +71,7 @@ def get_try_again_markup():
     return reply_markup
 
 
-def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images, user_id=None, photo=None):
+def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
     seed = seed if seed is not None else random.randint(1, 10000)
     generator = torch.cuda.manual_seed_all(seed)
     
