@@ -168,7 +168,7 @@ async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     anyCommands('NUMBER_IMAGES')
  
-def anyCommands(options) -> None:
+async def anyCommands(options) -> None:
     if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == none:
