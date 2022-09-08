@@ -108,6 +108,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     num_inference_steps=u_num_inference_steps)["sample"][0]
             
     images = [images] if type(images) != type([]) else images
+    seed = [seed] if type(seed) != type([]) else seed
     return images, seed
 
 
@@ -121,8 +122,8 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for value in im:
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for key, value in enumerate(im):
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
@@ -134,8 +135,8 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
     progress_msg = update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = await generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=1, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for value in im:
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{' '.join(context.args[1:]}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for key, value in enumerate(im):
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{' '.join(context.args[1:]}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
@@ -152,8 +153,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     im, seed = generate_image(prompt=update.message.caption, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for value in im:
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+    for key, value in enumerate(im):
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
