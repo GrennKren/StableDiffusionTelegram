@@ -110,8 +110,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
-    seed = seed if u_number_images <= 1 else 'Empty'
-    return images, seed
+    seeds = ["Empty"] * len(images)
+    seeds[0] = seed
+    
+    return images, seeds
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
