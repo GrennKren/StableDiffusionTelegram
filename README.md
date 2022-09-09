@@ -4,7 +4,7 @@ StableDiffusionTelegram is a telegram bot that allows to generate images using t
 
 ## Try it
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1J8AwNljTqtfKr44YqpbkC-43GiKJ93Dt?usp=sharing)
-[![Open In Colab (From master git)](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11HvpaEJudoY5-KYU3GBWYjAMWoe2a21u)
+[![Open In Colab - From master git](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11HvpaEJudoY5-KYU3GBWYjAMWoe2a21u)
 
 Try the bot with colab, create a token of [Hugging Face Hub](https://huggingface.co/docs/hub/security-tokens) and [Telegram](https://t.me/BotFather) and deploy the bot with colab.
 
