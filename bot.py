@@ -195,7 +195,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     
-    prompt = replied_message.caption if type(replied_message.get('caption') != None else replied_message.text 
+    prompt = replied_message.caption if type(replied_message.get('caption') is not None else replied_message.text 
     prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
                                              
     await query.answer()
