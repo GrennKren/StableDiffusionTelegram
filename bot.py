@@ -72,8 +72,8 @@ def get_try_again_markup():
 
 
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
-    seed = seed if seed is not None else random.randint(1, 10000)
-    generator = torch.cuda.manual_seed_all(seed)
+    seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is not None else None
+    generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
     
     if OPTIONS_U.get(user_id) == None:
        OPTIONS_U[user_id] = {}
@@ -114,7 +114,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             
     images = [images] if type(images) != type([]) else images
     seeds = ["Empty"] * len(images)
-    seeds[0] = seed if u_number_images == 1 else "Empty"
+    seeds[0] = seed if u_number_images == 1 and seed is not None else "Empty"
     
     return images, seeds
 
