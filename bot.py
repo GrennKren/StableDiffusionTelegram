@@ -175,6 +175,8 @@ async def anyStrength(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await anyCommands('GUIDANCE_SCALE', update=update, context=context)
 async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(update, reply_to_message_id=update.message.message_id)
+    await update.message.reply_text(context, reply_to_message_id=update.message.message_id)
     await anyCommands('NUMBER_IMAGES', update=update, context=context)
  
 async def anyCommands(options, update, context) -> None:
