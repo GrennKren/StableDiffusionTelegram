@@ -96,7 +96,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
-                                    generator=generator   #generator if u_number_images == 1 else None,
+                                    generator=generator,   #generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
@@ -105,7 +105,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
-                                    generator=generator # generator if u_number_images == 1 else None,
+                                    generator=generator, # generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     height=height,
                                     width=width,
