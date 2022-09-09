@@ -1,7 +1,7 @@
 import torch
 from torch import autocast
-from diffusers import StableDiffusionPipeline
-from image_to_image import StableDiffusionImg2ImgPipeline, preprocess
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
+from image_to_image import preprocess
 from PIL import Image
 
 import os
