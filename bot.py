@@ -16,7 +16,7 @@ TG_TOKEN = os.getenv('TG_TOKEN')
 MODEL_DATA = os.getenv('MODEL_DATA', 'CompVis/stable-diffusion-v1-4')
 LOW_VRAM_MODE = (os.getenv('LOW_VRAM', 'true').lower() == 'true')
 USE_AUTH_TOKEN = os.getenv('USE_AUTH_TOKEN')
-SAFETY_CHECKER = os.getenv('SAFETY_CHECKER', True)
+SAFETY_CHECKER = False if os.getenv('SAFETY_CHECKER', True) == 'False' else True
 HEIGHT = int(os.getenv('HEIGHT', '512'))
 WIDTH = int(os.getenv('WIDTH', '512'))
 NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
