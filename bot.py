@@ -197,6 +197,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
+    
+    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
                                              
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
@@ -204,13 +206,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
-            im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.chat.id)
+            im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
-            im, seed = generate_image(prompt, number_images=1, user_id=replied_message.chat.id)
+            im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
-        im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.chat.id)
+        im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im): 
