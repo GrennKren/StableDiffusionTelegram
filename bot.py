@@ -216,7 +216,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.chat.id)
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+    for key, value in enumerate(im): 
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
 
 
 
