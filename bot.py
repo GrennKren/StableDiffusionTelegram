@@ -195,10 +195,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     
+    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
+    
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
-    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
+    
                                              
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
