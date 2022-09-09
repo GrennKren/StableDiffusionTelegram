@@ -82,11 +82,15 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_guidance_scale = OPTIONS_U.get(user_id).get('GUIDANCE_SCALE')
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
     u_number_images = OPTIONS_U.get(user_id).get('NUMBER_IMAGES')
+    u_width = OPTIONS_U.get(user_id).get('WIDTH')
+    u_height = OPTIONS_U.get(user_id).get('HEIGHT')
     
     u_strength = float(u_strength) if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
     u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
+    u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
+    u_width = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
     if photo is not None:
         pipe.to("cpu")
@@ -166,20 +170,15 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
-
-        
-async def anySteps(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('NUM_INFERENCE_STEPS', update=update, context=context)
-async def anyStrength(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('STRENTH', update=update, context=context)
-async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('GUIDANCE_SCALE', update=update, context=context)
-async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(update, reply_to_message_id=update.message.message_id)
-    await update.message.reply_text(context, reply_to_message_id=update.message.message_id)
-    await anyCommands('NUMBER_IMAGES', update=update, context=context)
  
-async def anyCommands(options, update, context) -> None:
+async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    options = {
+        "steps" : 'NUM_INFERENCE_STEPS' , 
+        "strength" : 'STRENTH', 
+        "guidance_scale" : 'GUIDANCE_SCALE', 
+        "number" : 'NUMBER_IMAGES', 
+        "width" : 'WIDTH', 
+        "height" : 'HEIGHT'}["".join((update.message.text).split(" ")[0][1:])]
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
@@ -200,9 +199,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
-    
-    
-                                             
+               
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
@@ -225,10 +222,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("steps", anySteps))
-app.add_handler(CommandHandler("strength", anyStrength))
-app.add_handler(CommandHandler("guidance_scale", anyGuidance_scale))
-app.add_handler(CommandHandler("number", anyNumber))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
