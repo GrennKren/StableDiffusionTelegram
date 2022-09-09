@@ -200,17 +200,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             photo = await photo_file.download_as_bytearray()
             prompt = replied_message.caption
             prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
-            im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.callback_query.from.id)
+            im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.callback_query.from['id'])
         else:
             prompt = replied_message.text
             prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
-            im, seed = generate_image(prompt, number_images=1, user_id=update.callback_query.from.id)
+            im, seed = generate_image(prompt, number_images=1, user_id=update.callback_query.from['id'])
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         prompt = replied_message.text if replied_message.text is not None else replied_message.caption
         prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
-        im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.callback_query.from.id)
+        im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=update.callback_query.from['id'])
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     await context.bot.send_photo(update.effective_user.id, image_to_bytes(im), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
