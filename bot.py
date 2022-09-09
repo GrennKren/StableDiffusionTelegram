@@ -75,6 +75,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     seed = seed if seed is not None else random.randint(1, 10000)
     generator = torch.cuda.manual_seed_all(seed)
     
+    if OPTIONS_U.get(user_id) == None:
+       OPTIONS_U[user_id] = {}
+    
     u_strength = OPTIONS_U.get(user_id).get('STRENTH')
     u_guidance_scale = OPTIONS_U.get(user_id).get('GUIDANCE_SCALE')
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
