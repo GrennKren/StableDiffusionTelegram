@@ -3,7 +3,7 @@ StableDiffusionTelegram is a telegram bot that allows to generate images using t
 
 
 ## Try it
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1J8AwNljTqtfKr44YqpbkC-43GiKJ93Dt?usp=sharing)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hF05N8LF-fNFaNY6q1nGCyjq-Fqw15DN?usp=sharing)
 
 
 [![Open In Colab - From master git](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11HvpaEJudoY5-KYU3GBWYjAMWoe2a21u) - From master branch
