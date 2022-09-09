@@ -194,25 +194,22 @@ async def anyCommands(options, update, context) -> None:
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-
+    
+    prompt = replied_message.caption if type(replied_message.get('caption') != None else replied_message.text 
+    prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
+                                             
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
-            prompt = replied_message.caption
-            prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
             im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
-            prompt = replied_message.text
-            prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
             im, seed = generate_image(prompt, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
-        prompt = replied_message.text if replied_message.text is not None else replied_message.caption
-        prompt = prompt if prompt[0] != "/seed" else " ".join(prompt.split(" ")[1:])
         im, seed = generate_image(prompt, photo=photo, number_images=1, user_id=replied_message.chat.id)
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
