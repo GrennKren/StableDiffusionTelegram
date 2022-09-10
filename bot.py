@@ -114,7 +114,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = Image.open(BytesIO(photo)).convert("RGB")
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
-        
+        print("width : " + width)
+        print("height : " + height)
+        print("downscale : " + downscale)
         init_image = init_image.resize((ceil(height / downscale), ceil(width / downscale) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
