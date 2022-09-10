@@ -244,9 +244,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
         print("")
-            print("Dari variation")
-            print(update)
-            print(context)
+        print("Dari variation")
+        print(update)
+        print(context)
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
