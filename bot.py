@@ -10,6 +10,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, filters
 from io import BytesIO
 import random
+from math import ceil
 
 load_dotenv()
 TG_TOKEN = os.getenv('TG_TOKEN')
@@ -103,12 +104,16 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_width = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
-    
+         
+            
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
         init_image = Image.open(BytesIO(photo)).convert("RGB")
-        init_image = init_image.resize((height, width))
+        
+        downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
+        
+        init_image = init_image.resize((ceil(height / downscale), ceil(width / downscale) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
