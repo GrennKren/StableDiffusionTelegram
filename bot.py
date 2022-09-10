@@ -46,12 +46,12 @@ pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, 
        StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
             
 pipe = pipe.to("cpu")
-pipe = pipe.enable_attention_slicing()
+pipe.enable_attention_slicing()
 
 # load the img2img pipeline
 img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 img2imgPipe = img2imgPipe.to("cpu")
-img2imgPipe = img2imgPipe.enable_attention_slicing()
+img2imgPipe.enable_attention_slicing()
 
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
