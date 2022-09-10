@@ -130,7 +130,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
             # resize to original form
-            images = [Image.open(BytesIO(output_image)).resize((width, height)) for output_image in images]
+            images = [Image.open(image_to_bytes(output_image)).resize((width, height)) for output_image in images]
     else:
         pipe.to("cuda")
         
