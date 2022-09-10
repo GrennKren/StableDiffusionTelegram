@@ -117,7 +117,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         print("width : " + str(width))
         print("height : " + str(height))
         print("downscale : " + str(downscale))
-        init_image = init_image.resize((ceil(height / downscale), ceil(width / downscale) ))
+        
+        t_height = ceil(height / downscale)
+        t_width = ceil(width / downscale)
+        init_image = init_image.resize((t_width - (t_width % 64) , t_height - (t_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
@@ -125,6 +128,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
+            
+            # resize to original form
+            images = [Image.open(output_image).resize((width, height)) for output_image in images]
     else:
         pipe.to("cuda")
         
@@ -141,7 +147,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     images = [images] if type(images) != type([]) else images
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
-    
+     
     return images, seeds
 
 
