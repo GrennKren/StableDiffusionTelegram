@@ -47,12 +47,10 @@ pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, 
        StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
             
 pipe = pipe.to("cpu")
-pipe.enable_attention_slicing()
 
 # load the img2img pipeline
 img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 img2imgPipe = img2imgPipe.to("cpu")
-img2imgPipe.enable_attention_slicing()
 
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
@@ -112,6 +110,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
+        img2imgPipe.enable_attention_slicing()
         init_image = Image.open(BytesIO(photo)).convert("RGB")
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
@@ -134,6 +133,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             images = [Image.open(image_to_bytes(output_image)).resize((t_width, t_height)) for output_image in images]
     else:
         pipe.to("cuda")
+        pipe.enable_attention_slicing()
         
         img2imgPipe.to("cpu")
         with autocast("cuda"):
