@@ -285,14 +285,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               channel_multiplier=2,
               bg_upsampler=upsampler)
         
-        img = image_to_bytes
         if args.face_enhance:
-            _, _, output = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
+            _, _, output = face_enhancer.enhance(photo, has_aligned=False, only_center_face=False, paste_back=True)
         else:
-          output, _ = upsampler.enhance(img, outscale=args.outscale)
+          output, _ = upsampler.enhance(photo, outscale=4)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for key, value in enumerate(im): 
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+    if query.data == 'UPSCALE4':
+        await context.bot.send_photo(update.effective_user.id, output, caption=f'"{prompt}" (Seed: {seed[0]}) (Size: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+    else:
+        for key, value in enumerate(im): 
+           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
 
 
 
