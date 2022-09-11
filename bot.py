@@ -215,7 +215,9 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "guidance_scale" : 'GUIDANCE_SCALE', 
         "number" : 'NUMBER_IMAGES', 
         "width" : 'WIDTH', 
-        "height" : 'HEIGHT'}["".join((update.message.text).split(" ")[0][1:])]
+        "height" : 'HEIGHT',
+        "model_esrgan" : 'MODEL_ESRGAN'
+    }["".join((update.message.text).split(" ")[0][1:])]
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
@@ -254,7 +256,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
-        u_model_esrgan = u_model_esrgan if u_model_esrgan
+        u_model_esrgan = OPTIONS_U[query.message.from_user['id']].get('MODEL_ESRGAN')
+        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime']
         if str(MODEL_ESRGAN).lower() == "GFPGANv1.4".lower():
             model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
         else:
