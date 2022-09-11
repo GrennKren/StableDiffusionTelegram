@@ -118,9 +118,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = Image.open(BytesIO(photo)).convert("RGB")
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
-        print("width : " + str(width))
-        print("height : " + str(height))
-        print("downscale : " + str(downscale))
         
         t_height = ceil(height / downscale)
         t_width = ceil(width / downscale)
@@ -195,10 +192,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
-
-    print(update)
-    print("")
-    print(context)
     
     prompt = update.message.caption
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -239,37 +232,30 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-    print(update)
+    
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
     if query.message.photo is not None:
-      print(replied_message)
       width = query.message.photo[-1].width
       height = query.message.photo[-1].height
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
-            print("")
-            print("Dari tryagain")
-            print(update)
-            print(context)
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
             im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
-        print("")
-        print("Dari variation")
-        print(update)
-        print(context)
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
-    
+    elif query.data == "UPSCALE4":
+        
+        
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im): 
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
