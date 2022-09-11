@@ -257,13 +257,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
         u_model_esrgan = OPTIONS_U[query.message.from_user['id']].get('MODEL_ESRGAN')
-        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime']
-        if str(MODEL_ESRGAN).lower() == "GFPGANv1.4".lower():
-            model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
-        else:
-            model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
+        u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
         
-        model_path = os.path.join('experiments/pretrained_models', MODEL_ESRGAN + '.pth') 
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
+                RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
+        
+        model_path = os.path.join('experiments/pretrained_models', 'RealESRGAN_x4plus_anime_6B.pth' if u_model_esrgan is 'anime' else 'RealESRGAN_x4plus.pth') 
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im): 
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
