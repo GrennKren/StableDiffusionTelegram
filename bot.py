@@ -1,6 +1,6 @@
 import torch
 from torch import autocast
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler, preprocess
 #from image_to_image import preprocess
 #from StableDiffusionImg2ImgPipeline import preprocess
 from PIL import Image
@@ -121,7 +121,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         t_height = ceil(height / downscale)
         t_width = ceil(width / downscale)
         init_image = init_image.resize((t_width - (t_width % 64) , t_height - (t_height % 64) ))
-        init_image = StableDiffusionImg2ImgPipeline.preprocess(init_image)
+        init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
                                     generator=generator, #generator if u_number_images == 1 else None,
