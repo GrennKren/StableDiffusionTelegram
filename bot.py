@@ -262,7 +262,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
-        model_path = os.path.join('experiments/pretrained_models', 'RealESRGAN_x4plus_anime_6B.pth' if u_model_esrgan is 'anime' else 'GFPGANv1.4.pth' if u_model_esrgan is 'face' else 'RealESRGAN_x4plus.pth') 
+        model_path = os.path.join('experiments/pretrained_models', 'RealESRGAN_x4plus_anime_6B.pth' if u_model_esrgan is 'anime' else 'RealESRGAN_x4plus.pth') 
     
         #restorer
         upsampler = RealESRGANer(
@@ -276,8 +276,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         if u_model_esrgan == 'face':
             face_enhancer = GFPGANer(
-            model_path='https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth',
-            upscale=args.outscale,
+            model_path=os.path.join('experiments/pretrained_models', 'GFPGANv1.4.pth'),
+            upscale=4,
             arch='clean',
             channel_multiplier=2,
             bg_upsampler=upsampler)
