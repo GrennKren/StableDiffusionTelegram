@@ -2,7 +2,7 @@ import torch
 from torch import autocast
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler
 #from image_to_image import preprocess
-from diffusers.StableDiffusionImg2ImgPipeline import preprocess
+from StableDiffusionImg2ImgPipeline import preprocess
 from PIL import Image
 
 import os
