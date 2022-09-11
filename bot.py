@@ -256,6 +256,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
+        photo_file = await query.message.photo[-1].get_file()
+        photo = await photo_file.download_as_bytearray()
+       
         u_model_esrgan = OPTIONS_U[query.message.from_user['id']].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
         
@@ -276,11 +279,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         if u_model_esrgan == 'face':
             face_enhancer = GFPGANer(
-            model_path=os.path.join('experiments/pretrained_models', 'GFPGANv1.4.pth'),
-            upscale=4,
-            arch='clean',
-            channel_multiplier=2,
-            bg_upsampler=upsampler)
+              model_path=os.path.join('experiments/pretrained_models', 'GFPGANv1.4.pth'),
+              upscale=4,
+              arch='clean',
+              channel_multiplier=2,
+              bg_upsampler=upsampler)
+        
+        img = image_to_bytes
+        if args.face_enhance:
+            _, _, output = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
+        else:
+          output, _ = upsampler.enhance(img, outscale=args.outscale)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im): 
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
