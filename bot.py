@@ -207,7 +207,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
-    im, seed = generate_image(prompt=prompt, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
+    im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
