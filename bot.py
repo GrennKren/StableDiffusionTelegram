@@ -28,6 +28,8 @@ GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', None)
 
+MODEL_ESRGAN = os.getenv('MODEL_ESRGAN', 'RealESRGAN_x4plus')
+
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 
@@ -81,7 +83,8 @@ def image_to_bytes(image):
     return bio
 
 def get_try_again_markup():
-    keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")]]
+    keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
+                [InlineKeyboardButton("Upscaling 4x", callback_data="UPSCALE4")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
