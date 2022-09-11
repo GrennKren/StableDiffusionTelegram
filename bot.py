@@ -238,6 +238,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
     if replied_message.photo is not None:
+      print(replied_message)
       width = replied_message.photo[-1].width
       height = replied_message.photo[-1].height
     await query.answer()
