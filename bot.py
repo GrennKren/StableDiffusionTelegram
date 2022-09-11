@@ -237,19 +237,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
-    if replied_message.photo is not None:
+    if query.message.photo is not None:
       print(replied_message)
-      width = replied_message.photo[-1].width
-      height = replied_message.photo[-1].height
+      width = query.message.photo[-1].width
+      height = query.message.photo[-1].height
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
-        if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
+        if query.message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             print("")
             print("Dari tryagain")
             print(update)
             print(context)
-            photo_file = await replied_message.photo[-1].get_file()
+            photo_file = await query.message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
             im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
