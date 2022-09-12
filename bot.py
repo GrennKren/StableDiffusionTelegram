@@ -51,11 +51,6 @@ torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 #user variables
 OPTIONS_U = {}
 
-# for HTTP SERVER
-HTTP_PATH = "http_host"
-if os.path.exists(HTTP_PATH) is not True:
-  os.mkdirs(HTTP_PATH)
-
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
@@ -315,20 +310,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
           
-          while(True):
-            filename = str(random.randint(1, 10000000000000)) + ".png"
-            path_output = HTTP_PATH + "/" + filename
-            if os.path.exists(path_output) is not True:
-               break
-          
-          
-          cv2.imwrite(path_output, output)
+        
+            
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     if query.data == 'UPSCALE4':
-        if os.path.getsize(path_output) > (1024 * 1024 * 10):
-          await context.bot.send_photo(update.effective_user.id, output.tobytes(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
-        else:
-          await context.bot.send_photo(update.effective_user.id, output.tobytes(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+        output_bytes = output.tobytes()
+        Image.save(output_bytes, quality=90, optimize=True)
+        await context.bot.send_photo(update.effective_user.id, output_bytes, caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
     else:
         for key, value in enumerate(im): 
            await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
