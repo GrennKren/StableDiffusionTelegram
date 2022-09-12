@@ -321,7 +321,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         #Image.save(output_bytes, quality=90, optimize=True)
         output_image = BytesIO()
         image_opened.save(output_image, 'jpeg', quality=90, optimize=True)
-        await context.bot.send_photo(update.effective_user.id, output_image, caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
     else:
         for key, value in enumerate(im): 
            await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
