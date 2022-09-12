@@ -14,6 +14,14 @@ from io import BytesIO
 import random
 from math import ceil
 
+# REAL-ESRGAN need
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from gfpgan import GFPGANer
+import sys
+
+sys.path.insert(0, '../Real-ESRGAN ')
+
 load_dotenv()
 TG_TOKEN = os.getenv('TG_TOKEN')
 MODEL_DATA = os.getenv('MODEL_DATA', 'CompVis/stable-diffusion-v1-4')
