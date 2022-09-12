@@ -314,11 +314,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     if query.data == 'UPSCALE4':
-       # size = (output[0], output[1])
-        #image_opened = Image.frombytes('RGB', size, output.tobytes())
+        size = (output.shape[0], output.shape[1])
+        image_opened = Image.frombytes('RGB', size, output.tobytes())
         print(output.shape)
-        image_opened = Image.fromarray(output)
-        #Image.save(output_bytes, quality=90, optimize=True)
+        #image_opened = Image.fromarray(output)
+        
         output_image = BytesIO()
         image_opened.save(output_image, 'png', quality=90, optimize=True)
         await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
