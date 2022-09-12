@@ -260,7 +260,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         photo = await photo_file.download_as_bytearray()
         print(update)
         print(context)
-        u_model_esrgan = OPTIONS_U[query.message.from_user['id']].get('MODEL_ESRGAN')
+        u_model_esrgan = OPTIONS_U[query.message.from['id']].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
         
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
