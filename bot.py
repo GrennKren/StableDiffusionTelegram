@@ -314,7 +314,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     if query.data == 'UPSCALE4':
-        image_opened = Image.open(output.tobytes())
+        image_opened = Image.open(BytesIO(output.tobytes()))
         #Image.save(output_bytes, quality=90, optimize=True)
         output_image = BytesIO()
         image_opened.save(output_image, quality=90, optimize=True)
