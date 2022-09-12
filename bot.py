@@ -28,7 +28,12 @@ GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', None)
 
-MODEL_ESRGAN = os.getenv('MODEL_ESRGAN', 'RealESRGAN_x4plus')
+MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
+MODEL_ESRGAN_ARRAY = {
+  'face' : 'GFPGANv1.4.pth',
+  'anime' : 'RealESRGAN_x4plus_anime_6B.pth',
+  'generic' : 'RealESRGAN_x4plus.pth'
+}
 
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
@@ -266,12 +271,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             OPTIONS_U[replied_message.chat.id] = {}
             
         u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
-        u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
+        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else 'generic'
         print(u_model_esrgan)
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
-        model_path = os.path.join('experiments/pretrained_models', 'RealESRGAN_x4plus_anime_6B.pth' if u_model_esrgan is 'anime' else 'RealESRGAN_x4plus.pth') 
+        model_path = os.path.join('experiments/pretrained_models', MODEL_ESRGAN_ARRAY[u_model_esrgan] if u_model_esrgan is 'anime' else MODEL_ESRGAN_ARRAY['generic']) 
     
         #restorer
         upsampler = RealESRGANer(
@@ -285,7 +290,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         if u_model_esrgan == 'face':
             face_enhancer = GFPGANer(
-              model_path=os.path.join('experiments/pretrained_models', 'GFPGANv1.4.pth'),
+              model_path=os.path.join('experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
               upscale=4,
               arch='clean',
               channel_multiplier=2,
