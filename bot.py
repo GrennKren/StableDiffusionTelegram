@@ -20,6 +20,7 @@ from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 import sys
 import cv2
+import numpy as np
 
 sys.path.insert(0, '../Real-ESRGAN ')
 
@@ -308,7 +309,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(photo, has_aligned=False, only_center_face=False, paste_back=True)
         else:
-          output, _ = upsampler.enhance(cv2.imdecode(preprocess(Image.open(BytesIO(photo))), -1), outscale=4)
+          output, _ = upsampler.enhance(cv2.imdecode(np.fromstring(photo, dtype='uint8'), -1), outscale=4)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     if query.data == 'UPSCALE4':
         await context.bot.send_photo(update.effective_user.id, output, caption=f'"{prompt}" (Seed: {seed[0]}) (Size: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
