@@ -316,6 +316,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.data == 'UPSCALE4':
        # size = (output[0], output[1])
         #image_opened = Image.frombytes('RGB', size, output.tobytes())
+        print(output.shape)
         image_opened = Image.fromarray(output)
         #Image.save(output_bytes, quality=90, optimize=True)
         output_image = BytesIO()
