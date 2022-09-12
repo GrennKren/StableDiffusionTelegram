@@ -304,7 +304,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               channel_multiplier=2,
               bg_upsampler=upsampler)
         
-        if args.face_enhance:
+        if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(photo, has_aligned=False, only_center_face=False, paste_back=True)
         else:
           output, _ = upsampler.enhance(photo, outscale=4)
