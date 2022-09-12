@@ -306,13 +306,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               bg_upsampler=upsampler)
         
         if u_model_esrgan == 'face':
-            _, _, output = face_enhancer.enhance(photo, has_aligned=False, only_center_face=False, paste_back=True)
+            _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
-        
-            
-    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     if query.data == 'UPSCALE4':
         size = (output.shape[0], output.shape[1])
         #image_opened = Image.frombytes('RGB', size, output.tobytes())
@@ -321,8 +318,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         output_image = BytesIO()
         image_opened.save(output_image, 'png', quality=90, optimize=True)
+        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
     else:
+        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         for key, value in enumerate(im): 
            await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
          
