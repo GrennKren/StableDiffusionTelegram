@@ -258,7 +258,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "UPSCALE4":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
-       
+        print(update)
+        print(context)
         u_model_esrgan = OPTIONS_U[query.message.from_user['id']].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
         
