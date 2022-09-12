@@ -317,7 +317,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
         
         output_image = BytesIO()
-        image_opened.save(output_image, 'png', quality=90, optimize=True)
+        image_opened.save(output_image, 'png', quality=90)
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
     else:
