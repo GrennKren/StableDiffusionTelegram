@@ -19,6 +19,7 @@ from basicsr.archs.rrdbnet_arch import RRDBNet
 from realesrgan import RealESRGANer
 from gfpgan import GFPGANer
 import sys
+import cv2
 
 sys.path.insert(0, '../Real-ESRGAN ')
 
