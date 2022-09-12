@@ -284,7 +284,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
-        model_path = os.path.join('../Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY[u_model_esrgan] if u_model_esrgan is 'anime' else MODEL_ESRGAN_ARRAY['generic']) 
+        model_path = os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY[u_model_esrgan] if u_model_esrgan is 'anime' else MODEL_ESRGAN_ARRAY['generic']) 
     
         #restorer
         upsampler = RealESRGANer(
@@ -298,7 +298,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         if u_model_esrgan == 'face':
             face_enhancer = GFPGANer(
-              model_path=os.path.join('../Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
+              model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
               upscale=4,
               arch='clean',
               channel_multiplier=2,
