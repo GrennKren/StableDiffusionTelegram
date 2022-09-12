@@ -259,10 +259,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         print(update)
-        print(context)
+        
+        print(replied_message.chat.id)
+        print
+        if OPTIONS_U.get(replied_message.chat.id) is None:
+            OPTIONS_U[replied_message.chat.id] = {}
+            
         u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan.lower() if u_model_esrgan.lower() in ['generic','face', 'anime'] else 'generic'
-        
+        print(u_model_esrgan)
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
