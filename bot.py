@@ -233,6 +233,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
     }["".join((update.message.text).split(" ")[0][1:])]
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
@@ -273,15 +274,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "UPSCALE4":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
-        print(update)
-        
-        print(replied_message.chat.id)
         if OPTIONS_U.get(replied_message.chat.id) is None:
             OPTIONS_U[replied_message.chat.id] = {}
             
         u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else 'generic'
-        print(u_model_esrgan)
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
@@ -312,14 +309,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
            
     if query.data == 'UPSCALE4':
         size = (output.shape[0], output.shape[1])
-        #image_opened = Image.frombytes('RGB', size, output.tobytes())
-        print(output.shape)
         image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
         
         output_image = BytesIO()
-        image_opened.save(output_image, 'png', quality=90)
+        image_opened.save(output_image, 'png', quality=100)
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Size out: {width * 4}, {height * 4})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
     else:
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         for key, value in enumerate(im): 
