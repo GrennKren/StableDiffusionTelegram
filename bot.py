@@ -161,8 +161,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             images = pipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
-                                    height=u_height - (u_height % 8),
-                                    width=u_width - (u_width % 8),
+                                    height=u_height - (u_height % 64),
+                                    width=u_width - (u_width % 64),
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
