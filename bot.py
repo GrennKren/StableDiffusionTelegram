@@ -53,6 +53,13 @@ torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 #user variables
 OPTIONS_U = {}
 
+OPTION_JSON_FILE = "user_variables.json"
+if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + json_file) is True:
+  import json
+  with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'w') as file:
+    OPTIONS_U = json.load(file)
+
+
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
@@ -240,7 +247,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     }["".join((update.message.text).split(" ")[0][1:])]
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
-       OPTIONS_U[update.message.from_user['id']] = {}
+        OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == None:
@@ -248,7 +255,12 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         else:
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
     else:
-        OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
+        json_path = '/content/drive/MyDrive/Colab/StableDiffusionTelegram'
+        if os.path.exists(json_path) is True:
+          with open(f"{json_path}/{OPTION_JSON_FILE}", 'w') as file:
+            json.dump(OPTIONS_U, file, indent = 4)
+        else: 
+          OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
         await update.message.reply_text(f'successfully updated {options} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
             
