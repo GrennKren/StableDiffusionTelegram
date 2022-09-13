@@ -141,7 +141,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         
         t_height = ceil(height / downscale)
         t_width = ceil(width / downscale)
-        init_image = init_image.resize((t_width - (t_width % 64) , t_height - (t_height % 64) ))
+        init_image = init_image.resize((t_width - (t_width % 8) , t_height - (t_height % 8) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
@@ -150,8 +150,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
-            # resize to original form
-            images = [Image.open(image_to_bytes(output_image)).resize((t_width, t_height)) for output_image in images]
+            
+           
     else:
         pipe.to("cuda")
         pipe.enable_attention_slicing()
@@ -161,12 +161,16 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             images = pipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
-                                    height=u_height,
-                                    width=u_width,
+                                    height=t_height - (t_height % 8),
+                                    width=t_width - (t_width % 8),
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
+    
+    # resize to original form
+    images = [Image.open(image_to_bytes(output_image)).resize((t_width, t_height)) for output_image in images]
+    
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
