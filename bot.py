@@ -339,10 +339,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
          
 
 
-app = ApplicationBuilder()
-app.base_url(f"{SERVER}/bot") 
-app.base_file_url(f"{SERVER}/file/bot")
-app.token(TG_TOKEN).build()
+app = ApplicationBuilder() \
+ .base_url(f"{SERVER}/bot") \
+ .base_file_url(f"{SERVER}/file/bot") \
+ .token(TG_TOKEN).build() \
 
 app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
 
