@@ -54,7 +54,7 @@ torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 OPTIONS_U = {}
 
 OPTION_JSON_FILE = "user_variables.json"
-if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + json_file) is True:
+if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE) is True:
   import json
   with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'w') as file:
     OPTIONS_U = json.load(file)
