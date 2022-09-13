@@ -1,4 +1,4 @@
-diffusers>=0.2.4
+diffusers>=0.3.0
 transformers>=4.21.1
 scipy>=1.7.3
 ftfy>=6.1.1

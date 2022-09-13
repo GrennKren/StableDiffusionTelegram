@@ -1,7 +1,9 @@
 import torch
 from torch import autocast
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
-from image_to_image import preprocess
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import preprocess
+#from image_to_image import preprocess
+#from StableDiffusionImg2ImgPipeline import preprocess
 from PIL import Image
 
 import os
@@ -10,6 +12,17 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, filters
 from io import BytesIO
 import random
+from math import ceil
+
+# REAL-ESRGAN need
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from gfpgan import GFPGANer
+import sys
+import cv2
+import numpy as np
+
+sys.path.insert(0, '../Real-ESRGAN ')
 
 load_dotenv()
 TG_TOKEN = os.getenv('TG_TOKEN')
@@ -23,6 +36,14 @@ NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
 STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
+SCHEDULER = os.getenv('SCHEDULER', None)
+
+MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
+MODEL_ESRGAN_ARRAY = {
+  'face' : 'GFPGANv1.4.pth',
+  'anime' : 'RealESRGAN_x4plus_anime_6B.pth',
+  'generic' : 'RealESRGAN_x4plus.pth'
+}
 
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
@@ -30,8 +51,19 @@ torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 #user variables
 OPTIONS_U = {}
 
+# Text-to-Image Scheduler 
+# - PLMS from StableDiffusionPipeline (Default)
+# - DDIM 
+# - K-LMS
+scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "DDIM" else \
+            LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "KLMS" else \
+            None
+
+
 # load the text2img pipeline
-pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
+       StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+            
 pipe = pipe.to("cpu")
 
 # load the img2img pipeline
@@ -66,7 +98,8 @@ def image_to_bytes(image):
     return bio
 
 def get_try_again_markup():
-    keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")]]
+    keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
+                [InlineKeyboardButton("Upscaling", callback_data="UPSCALE4")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -82,17 +115,27 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_guidance_scale = OPTIONS_U.get(user_id).get('GUIDANCE_SCALE')
     u_num_inference_steps = OPTIONS_U.get(user_id).get('NUM_INFERENCE_STEPS')
     u_number_images = OPTIONS_U.get(user_id).get('NUMBER_IMAGES')
+    u_width = OPTIONS_U.get(user_id).get('WIDTH')
+    u_height = OPTIONS_U.get(user_id).get('HEIGHT')
     
     u_strength = float(u_strength) if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
-    u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 8 else guidance_scale
+    u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 16 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
+    u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
+    u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
+        img2imgPipe.enable_attention_slicing()
         init_image = Image.open(BytesIO(photo)).convert("RGB")
-        init_image = init_image.resize((height, width))
+        
+        downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
+        
+        u_height = ceil(height / downscale)
+        u_width = ceil(width / downscale)
+        init_image = init_image.resize((u_width - (u_width % 8) , u_height - (u_height % 8) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
@@ -100,22 +143,31 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
+            
+            
+           
     else:
         pipe.to("cuda")
+        pipe.enable_attention_slicing()
+        
         img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
-                                    height=height,
-                                    width=width,
+                                    height=u_height - (u_height % 64),
+                                    width=u_width - (u_width % 64),
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
+    
+    # resize to original form
+    images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
+    
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
-    
+     
     return images, seeds
 
 
@@ -124,8 +176,8 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
        OPTIONS_U[update.message.from_user['id']] = {}
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
-    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES
-    
+    u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
+  
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -141,7 +193,7 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
         return
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')    
-    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES    
+    u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)    
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=' '.join(context.args[1:]), seed=context.args[0], number_images=u_number_images, user_id=update.message.from_user['id'])
@@ -156,28 +208,35 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
+    width = update.message.photo[-1].width
+    height = update.message.photo[-1].height
+    
+    prompt = update.message.caption
+    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
+    prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
+            
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
-    u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) <= 4 and int(u_number_images) > 0 else NUMBER_IMAGES
+    u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
-    im, seed = generate_image(prompt=update.message.caption, photo=photo, user_id=update.message.from_user['id'])
+    im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
-
-        
-async def anySteps(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('NUM_INFERENCE_STEPS', update=update, context=context)
-async def anyStrength(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('STRENTH', update=update, context=context)
-async def anyGuidance_scale(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('GUIDANCE_SCALE', update=update, context=context)
-async def anyNumber(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await anyCommands('NUMBER_IMAGES', update=update, context=context)
  
-async def anyCommands(options, update, context) -> None:
+async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    options = {
+        "steps" : 'NUM_INFERENCE_STEPS' , 
+        "strength" : 'STRENTH', 
+        "guidance_scale" : 'GUIDANCE_SCALE', 
+        "number" : 'NUMBER_IMAGES', 
+        "width" : 'WIDTH', 
+        "height" : 'HEIGHT',
+        "model_esrgan" : 'MODEL_ESRGAN'
+    }["".join((update.message.text).split(" ")[0][1:])]
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
@@ -199,34 +258,76 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
-    
-                                             
+    if query.message.photo is not None:
+      width = query.message.photo[-1].width
+      height = query.message.photo[-1].height
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
-            im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
+            im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
-        im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
+        im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+    elif query.data == "UPSCALE4":
+        photo_file = await query.message.photo[-1].get_file()
+        photo = await photo_file.download_as_bytearray()
+        if OPTIONS_U.get(replied_message.chat.id) is None:
+            OPTIONS_U[replied_message.chat.id] = {}
+            
+        u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
+        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else 'generic'
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
+                RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
+        
+        model_path = os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY[u_model_esrgan] if u_model_esrgan is 'anime' else MODEL_ESRGAN_ARRAY['generic']) 
     
-    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for key, value in enumerate(im): 
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
-
+        #restorer
+        upsampler = RealESRGANer(
+        scale=4,
+        model_path=model_path,
+        model=model,
+        tile=0,
+        tile_pad=10,
+        pre_pad=0,
+        half=False)
+        
+        if u_model_esrgan == 'face':
+            face_enhancer = GFPGANer(
+              model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
+              upscale=4,
+              arch='clean',
+              channel_multiplier=2,
+              bg_upsampler=upsampler)
+        
+        if u_model_esrgan == 'face':
+            _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
+        else:
+          output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
+           
+    if query.data == 'UPSCALE4':
+        size = (output.shape[0], output.shape[1])
+        image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
+        
+        output_image = BytesIO()
+        image_opened.save(output_image, 'png', quality=100)
+        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+    else:
+        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+        for key, value in enumerate(im): 
+           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+         
 
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler("steps", anySteps))
-app.add_handler(CommandHandler("strength", anyStrength))
-app.add_handler(CommandHandler("guidance_scale", anyGuidance_scale))
-app.add_handler(CommandHandler("number", anyNumber))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
