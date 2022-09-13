@@ -118,9 +118,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_width = OPTIONS_U.get(user_id).get('WIDTH')
     u_height = OPTIONS_U.get(user_id).get('HEIGHT')
     
-    print(f"u_width : {u_width}")
-    print(f"u_height : {u_height}")
-    
     u_strength = float(u_strength) if isFloat(u_strength) and float(u_strength) >= 0 and float(u_strength) <= 1 else strength
     u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 16 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
@@ -128,9 +125,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
-    print(f"u_width : {u_width}")
-    print(f"u_height : {u_height}")
-            
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
