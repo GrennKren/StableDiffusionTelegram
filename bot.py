@@ -139,8 +139,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
         
-        t_height = ceil(u_height / downscale)
-        t_width = ceil(u_width / downscale)
+        t_height = ceil(height / downscale)
+        t_width = ceil(width / downscale)
         init_image = init_image.resize((t_width - (t_width % 64) , t_height - (t_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
@@ -161,8 +161,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             images = pipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
-                                    height=height,
-                                    width=width,
+                                    height=u_height,
+                                    width=h_width,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
