@@ -45,6 +45,8 @@ MODEL_ESRGAN_ARRAY = {
   'generic' : 'RealESRGAN_x4plus.pth'
 }
 
+SERVER = str(os.getenv('SERVER', "https://api.telegram.org"))
+
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 
@@ -325,7 +327,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
          
 
 
-app = ApplicationBuilder().token(TG_TOKEN).build()
+app = ApplicationBuilder()
+app.base_url(f"{SERVER}/bot") 
+app.base_file_url(f"{SERVER}/file/bot")
+app.token(TG_TOKEN).build()
 
 app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
 
