@@ -162,7 +162,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
                                     height=u_height,
-                                    width=h_width,
+                                    width=u_width,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             
