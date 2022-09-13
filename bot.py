@@ -306,7 +306,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         scale=4,
         model_path=model_path,
         model=model,
-        tile=0,
+        tile=512,
         tile_pad=10,
         pre_pad=0,
         half=False)
