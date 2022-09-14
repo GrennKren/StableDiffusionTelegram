@@ -116,7 +116,11 @@ def get_try_again_markup():
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
-
+def get_download_markup():
+    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+    
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
     seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
     generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
@@ -347,8 +351,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
-        #await context.bot.send_photo(update.effective_user.id, output.tobytes(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_download_markup(), reply_to_message_id=replied_message.message_id)
     else:
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         for key, value in enumerate(im): 
