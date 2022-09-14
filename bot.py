@@ -335,8 +335,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == 'UPSCALE4':
-        image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
-        output_image = BytesIO()
+        output_width  = output.shape[0]
+        output_height = output.shape[1]
+        image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
+        output_image  = BytesIO()
         image_opened.save(output_image, 'jpg', quality=80)
         
         ################
@@ -351,7 +353,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_download_markup(), reply_to_message_id=replied_message.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio : {output_width}x{output_height})', reply_markup=(get_download_markup() if os.path.exists(path) else None), reply_to_message_id=replied_message.message_id)
     else:
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         for key, value in enumerate(im): 
