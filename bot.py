@@ -331,15 +331,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == 'UPSCALE4':
-        #image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
-        
+        image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
         output_image = BytesIO()
-        #image_opened.save(output_image, 'png', quality=100)
+        image_opened.save(output_image, 'jpg', quality=80)
         
         ################
-        cv2.imwrite(output_image, output)
-        #if os.path.exists('/content/output_scaled'):
-          
+        scaled_path = '/content/output_scaled'
+        if os.path.exists(path):
+          while True:
+            if os.path.exists(f'{path}/{ceil(random.random() * 1000000000000)}.png') is not True:
+              cv2.imwrite(output_image, output)
+              break
+        
         
         
         
