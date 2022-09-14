@@ -256,12 +256,14 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         else:
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
     else:
+        OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
+        
         json_path = '/content/drive/MyDrive/Colab/StableDiffusionTelegram'
         if os.path.exists(json_path) is True:
           with open(f"{json_path}/{OPTION_JSON_FILE}", 'w') as file:
             json.dump(OPTIONS_U, file, indent = 4)
-        else: 
-          OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
+        
+          
         await update.message.reply_text(f'successfully updated {options} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
     return
             
