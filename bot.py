@@ -60,7 +60,8 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
     with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'w') as file:
       OPTIONS_U = json.load(file)
   except:
-    
+    False
+  
 
 
 # Text-to-Image Scheduler 
