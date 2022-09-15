@@ -155,7 +155,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
-        init_image = init_image.resize((u_width - (u_width % 8) , u_height - (u_height % 8) ))
+        init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
