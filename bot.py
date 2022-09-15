@@ -367,6 +367,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # callback_data only allow string and 64Bytes lengths.
        print(replied_message.caption)
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", )[-1]
+       print(type(filename))
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     else:
