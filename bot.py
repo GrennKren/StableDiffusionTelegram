@@ -365,7 +365,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # I know.. not too shiny. searching filename on message text.
        # I just can't figure out how to passing data into keyboardmarkup.
        # callback_data only allow string and 64Bytes lengths.
-       print("caption : " + replied_message.caption)
+       #print("caption : " + replied_message.caption)
        print("text : " + replied_message.text)
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", replied_message.text)[-1]
        print(type(filename))
