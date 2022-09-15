@@ -369,6 +369,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        print(replied_message)
        print(query)
        print(replied_message.caption)
+       print(prompt)
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", replied_message.text)[-1]
        print(type(filename))
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
