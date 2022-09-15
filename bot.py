@@ -59,7 +59,7 @@ OPTIONS_U = {}
 OPTION_JSON_FILE = "user_variables.json"
 if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE) is True:
   try:
-    with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'w') as file:
+    with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'r') as file:
       OPTIONS_U = json.load(file)
   except:
     False
