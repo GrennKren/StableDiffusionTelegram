@@ -352,6 +352,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               break
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         if os.path.exists(image_saved):
+          print(query)
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (W x H : {output_width}x{output_height})', reply_markup=get_download_markup(image_saved), reply_to_message_id=replied_message.message_id)
         else:
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (W x H : {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
