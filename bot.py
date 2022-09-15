@@ -118,7 +118,7 @@ def get_try_again_markup():
 
 def get_download_markup(input_path):
     
-    keyboard = [[InlineKeyboardButton("Download", callback_data={"DOWNLOAD" : input_path ], location_file=input_path)]]
+    keyboard = [[InlineKeyboardButton("Download", callback_data={"DOWNLOAD" : input_path }, location_file=input_path)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
