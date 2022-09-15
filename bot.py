@@ -350,7 +350,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if os.path.exists(image_saved) is not True:
               cv2.imwrite(image_saved, output)
               break
+        print("test")
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+        print("this line doesnt run, why!?")
         print(image_saved)
         print(f"is exists? {os.path.exists(image_saved)}")
         if os.path.exists(image_saved):
