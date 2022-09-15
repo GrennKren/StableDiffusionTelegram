@@ -111,14 +111,14 @@ def image_to_bytes(image):
     return bio
 
 def get_try_again_markup():
-    keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
-                [InlineKeyboardButton("Upscaling", callback_data="UPSCALE4")]]
+    keyboard = [[InlineKeyboardButton("Try again", callback_data={"TRYAGAIN"}), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
+                [InlineKeyboardButton("Upscaling", callback_data={"UPSCALE4"})]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
 def get_download_markup(input_path):
-    print(input_path)
-    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD", location_file=input_path)]]
+    
+    keyboard = [[InlineKeyboardButton("Download", callback_data={"DOWNLOAD" : input_path ], location_file=input_path)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
@@ -288,18 +288,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
       height = query.message.photo[-1].height
     await query.answer()
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
-    if query.data == "TRYAGAIN":
+    if "TRYAGAIN" in query.data:
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
             photo = await photo_file.download_as_bytearray()
             im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
-    elif query.data == "VARIATIONS":
+    elif "VARIATIONS" in query.data:
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
-    elif query.data == "UPSCALE4":
+    elif "UPSCALE4" in query.data:
         photo_file = await query.message.photo[-1].get_file()
         photo = await photo_file.download_as_bytearray()
         if OPTIONS_U.get(replied_message.chat.id) is None:
@@ -335,7 +335,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
-    if query.data == 'UPSCALE4':
+    if 'UPSCALE4' in query.data:
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
@@ -350,21 +350,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if os.path.exists(image_saved) is not True:
               cv2.imwrite(image_saved, output)
               break
-        print("test")
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        print("this line doesnt run, why!?")
-        print(image_saved)
-        print(f"is exists? {os.path.exists(image_saved)}")
         if os.path.exists(image_saved):
-          print(query)
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (W x H : {output_width}x{output_height})', reply_markup=get_download_markup(image_saved), reply_to_message_id=replied_message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_markup=get_download_markup(image_saved), reply_to_message_id=replied_message.message_id)
         else:
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (W x H : {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
-    elif query.data == 'DOWNLOAD':
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
+    elif 'DOWNLOAD' in query.data:
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        print(query)
-       
+       await context.bot.send_photo(update.effective_user.id, file=query.data['DOWNLOAD'], reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
