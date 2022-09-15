@@ -339,6 +339,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == "UPSCALE4":
+      
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
@@ -346,6 +347,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         image_opened.save(output_image, 'jpeg', quality=100)
         
         ################
+        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         save_location = '/content/output_scaled'
         if os.path.exists(save_location):
           while True:
@@ -354,8 +356,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if os.path.exists(image_saved) is not True:
               cv2.imwrite(image_saved, output)
               break
-        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        if os.path.exists(image_saved):
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
         else:
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
