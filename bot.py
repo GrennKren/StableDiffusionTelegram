@@ -118,7 +118,7 @@ def get_try_again_markup():
 
 def get_download_markup(input_path):
     
-    keyboard = [[InlineKeyboardButton("Download", callback_data={"DOWNLOAD" : input_path }, location_file=input_path)]]
+    keyboard = [[InlineKeyboardButton("Download", callback_data={"DOWNLOAD" : input_path })]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
@@ -190,12 +190,13 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(OPTIONS_U) 
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
-  
+    print(u_number_images)
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
