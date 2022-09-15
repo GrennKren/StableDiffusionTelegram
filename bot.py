@@ -342,14 +342,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         image_opened.save(output_image, 'jpeg', quality=100)
         
         ################
-        scaled_path = '/content/output_scaled'
-        if os.path.exists(path):
+        save_location = '/content/output_scaled'
+        if os.path.exists(save_location):
           while True:
-            if os.path.exists(f'{path}/{ceil(random.random() * 1000000000000)}.png') is not True:
-              cv2.imwrite(output_image, output)
+            image_saved = f'{save_location}/{ceil(random.random() * 1000000000000)}.png'
+            if os.path.exists() is not True:
+              cv2.imwrite(image_saved, output)
               break
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio : {output_width}x{output_height})', reply_markup=(get_download_markup() if os.path.exists(path) else None), reply_to_message_id=replied_message.message_id)
+        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio : {output_width}x{output_height})', reply_markup=(get_download_markup(image_saved) if os.path.exists(save_location) else None), reply_to_message_id=replied_message.message_id)
     elif query.data == 'DOWNLOAD':
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
