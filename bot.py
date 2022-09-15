@@ -270,7 +270,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
         
         json_path = '/content/drive/MyDrive/Colab/StableDiffusionTelegram'
-        if os.path.exists(json_path) is True:
+        if os.path.exists(f"{json_path}/{OPTION_JSON_FILE}") is True:
           with open(f"{json_path}/{OPTION_JSON_FILE}", 'w') as file:
             json.dump(OPTIONS_U, file, indent = 4)
         
