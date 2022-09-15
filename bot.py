@@ -116,8 +116,8 @@ def get_try_again_markup():
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
-def get_download_markup():
-    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]
+def get_download_markup(input_path):
+    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD", location_file=input_path)]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
@@ -348,16 +348,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if os.path.exists(f'{path}/{ceil(random.random() * 1000000000000)}.png') is not True:
               cv2.imwrite(output_image, output)
               break
-        
-        
-        
-        
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio : {output_width}x{output_height})', reply_markup=(get_download_markup() if os.path.exists(path) else None), reply_to_message_id=replied_message.message_id)
+    elif query.data == 'DOWNLOAD':
+       
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+       print(query)
+       
     else:
-        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        for key, value in enumerate(im): 
-           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+       for key, value in enumerate(im): 
+          await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
          
 
 
