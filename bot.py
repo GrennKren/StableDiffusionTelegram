@@ -366,7 +366,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # I just can't figure out how to passing data into keyboardmarkup.
        # callback_data only allow string and 64Bytes lengths.
        #print("caption : " + replied_message.caption)
-       print("text : " + prompt)
+       print(replied_message)
+       print(query)
+       print(replied_message.caption)
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", replied_message.text)[-1]
        print(type(filename))
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
