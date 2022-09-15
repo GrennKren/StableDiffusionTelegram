@@ -118,7 +118,7 @@ def get_try_again_markup():
 
 def get_download_markup(input_path):
     
-    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
+    keyboard = [[InlineKeyboardButton("Download", callback_data="1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
@@ -356,7 +356,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_markup=get_download_markup(image_saved), reply_to_message_id=replied_message.message_id)
         else:
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
-    elif 'DOWNLOAD' in query.data:
+    elif query.data == "DOWNLOAD":
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        print(query)
