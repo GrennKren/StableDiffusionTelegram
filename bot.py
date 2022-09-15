@@ -23,6 +23,8 @@ import cv2
 import numpy as np
 
 import json
+import re
+
 sys.path.insert(0, '../Real-ESRGAN ')
 
 load_dotenv()
@@ -118,7 +120,7 @@ def get_try_again_markup():
 
 def get_download_markup(input_path):
     
-    keyboard = [[InlineKeyboardButton("Download", callback_data="1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")]]
+    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
@@ -347,25 +349,30 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         save_location = '/content/output_scaled'
         if os.path.exists(save_location):
           while True:
-            image_saved = f'{save_location}/{ceil(random.random() * 1000000000000)}.png'
+            filename = f'{ceil(random.random() * 1000000000000)}.png'
+            image_saved = f'{save_location}/{filename}'
             if os.path.exists(image_saved) is not True:
               cv2.imwrite(image_saved, output)
               break
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         if os.path.exists(image_saved):
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_markup=get_download_markup(image_saved), reply_to_message_id=replied_message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markupp, reply_to_message_id=replied_message.message_id)
         else:
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Ratio Sizes : {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
     elif query.data == "DOWNLOAD":
+       save_location = '/content/output_scaled'
        
+       # I know.. not too shiny. searching filename on message text.
+       # I just can't figure out how to passing data into keyboardmarkup.
+       # callback_data only allow string and 64Bytes lengths.
+       filename = re.findall("[0-9]+\.?(?:png|jpeg)", replied_message.text)[-1]
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-       print(query)
-       await context.bot.send_photo(update.effective_user.id, file=query.data['DOWNLOAD'], reply_to_message_id=replied_message.message_id)
+       await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
-         
+          
 
 
 app = ApplicationBuilder() \
