@@ -383,7 +383,7 @@ app = ApplicationBuilder() \
  .base_file_url(f"{SERVER}/file/bot") \
  .token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan"], anyCommands))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
