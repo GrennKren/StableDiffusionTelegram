@@ -356,9 +356,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               break
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         if os.path.exists(image_saved):
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=replied_message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
         else:
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=replied_message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
     elif query.data == "DOWNLOAD":
        save_location = '/content/output_scaled'
        
@@ -366,13 +366,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # I just can't figure out how to passing data into keyboardmarkup.
        # callback_data only allow string and 64Bytes lengths.
        #print("caption : " + replied_message.caption)
-       print(replied_message) #empty
-       print(query) #empty
-       print(replied_message.caption) #empty
-       print(prompt) # there is prompt, that some logic right there
-       print(query.message)
+       
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)[-1]
-       print(type(filename))
+       
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     else:
