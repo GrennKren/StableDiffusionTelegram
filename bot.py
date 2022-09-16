@@ -223,6 +223,8 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{" ".join(context.args[1:])}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    print(update)
+    print(content)
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if update.message.caption is None:
@@ -365,7 +367,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # I know.. not too shiny. searching filename on message text.
        # I just can't figure out how to passing data into keyboardmarkup.
        # callback_data only allow string and 64Bytes lengths.
-       #print("caption : " + replied_message.caption)
        
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)[-1]
        
