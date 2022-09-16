@@ -5,3 +5,4 @@ ftfy>=6.1.1
 python-telegram-bot>=20.0a2
 python-dotenv>=0.20.0
 huggingface_hub
+googletrans==4.0.0rc1
