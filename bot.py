@@ -41,7 +41,7 @@ GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', None)
 
-USE_TRANSLATE = False os.getenv('USE_TRANSLATE', False).lower() == 'false' else True
+USE_TRANSLATE = False if os.getenv('USE_TRANSLATE', False).lower() == 'false' else True
 
 try:
   trans = None
