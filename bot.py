@@ -145,9 +145,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
-    if trans is not None:
-      prompt = trans.translate(prompt).text
-    
     if photo is not None:
         pipe.to("cpu")
         img2imgPipe.to("cuda")
