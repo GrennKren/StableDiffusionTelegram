@@ -224,7 +224,7 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print(update)
-    print(content)
+    print(contex)
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if update.message.caption is None:
