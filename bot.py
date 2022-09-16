@@ -41,17 +41,6 @@ GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', None)
 
-USE_TRANSLATE = False if os.getenv('USE_TRANSLATE', False).lower() == 'false' else True
-
-try:
-  trans = None
-  from googletrans import Translator
-  if USE_TRANSLATE is True:
-    trans = Translator()
-except:
-  False
- 
-
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
   'face' : 'GFPGANv1.4.pth',
