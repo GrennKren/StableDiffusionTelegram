@@ -32,7 +32,7 @@ TG_TOKEN = os.getenv('TG_TOKEN')
 MODEL_DATA = os.getenv('MODEL_DATA', 'CompVis/stable-diffusion-v1-4')
 LOW_VRAM_MODE = (os.getenv('LOW_VRAM', 'true').lower() == 'true')
 USE_AUTH_TOKEN = os.getenv('USE_AUTH_TOKEN')
-SAFETY_CHECKER = False if os.getenv('SAFETY_CHECKER', True) == 'False' else True
+SAFETY_CHECKER = False if os.getenv('SAFETY_CHECKER', True).lower() == 'false' else True
 HEIGHT = int(os.getenv('HEIGHT', '512'))
 WIDTH = int(os.getenv('WIDTH', '512'))
 NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
@@ -40,6 +40,17 @@ STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', None)
+
+USE_TRANSLATE = False os.getenv('USE_TRANSLATE', False).lower() == 'false' else True
+
+try:
+  trans = None
+  from googletrans import Translator
+  if USE_TRANSLATE is True:
+    trans = Translator()
+except:
+  False
+ 
 
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
@@ -144,6 +155,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
+    
+    if trans is not None:
+      prompt = trans.translate(prompt).text
     
     if photo is not None:
         pipe.to("cpu")
