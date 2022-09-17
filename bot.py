@@ -1,6 +1,6 @@
 import torch
 from torch import autocast
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import preprocess
 #from image_to_image import preprocess
 #from StableDiffusionImg2ImgPipeline import preprocess
@@ -82,9 +82,13 @@ pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, 
 pipe = pipe.to("cpu")
 
 # load the img2img pipeline
-img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
+              StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 img2imgPipe = img2imgPipe.to("cpu")
 
+inpaint2imgPipe = StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
+              StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+inpaint2imgPipe = inpaint2imgPipe.to("cpu")
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
 if not SAFETY_CHECKER:
@@ -192,7 +196,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    
+    if (context.user_data['inpainting_process'] is not None) is True:
+      end_inpainting(update=update, context=context)
+      
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -206,6 +212,9 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if (context.user_data['inpainting_process'] is not None) is True:
+      end_inpainting(update=update, context=context)
+      
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -258,6 +267,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
  
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if (context.user_data['inpainting_process'] is not None) is True:
+      end_inpainting(update=update, context=context)
+      
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
@@ -381,14 +393,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == INPAINTING :
-       context.user_data["inpainting_process"] = True
-       await conv_inpainting(update=update, context=context)
+       photo_file = await query.message.photo[-1].get_file()
+       photo = await photo_file.download_as_bytearray
+       context.user_data['inpainting_process'] = True
+       context.user_data['first_image'] = photo
        print("")
        print("query : ")
        print(query)
        print("")
        print("replied_message : ")
        print(replied_message)
+       await conv_inpainting(update=update, context=context)
        
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -398,9 +413,20 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-    await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+    if context.user_data['first_image'] is not None:
+      if context_data['mask_image'] is None:
+        
+        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     return SELECT_MASK
-def end_inpainting():
+    
+def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data['inpainting_process'] is not None:
+      del context.user_data['inpainting_process']
+    if context.user_data['first_image'] is not None:
+      del context.user_data['first_image']
+    if context.user_data['mask_image'] is not None:
+      del context.user_data['mask_image']
+      
     return ConversationHandler.END
 
 app = ApplicationBuilder() \
@@ -420,8 +446,8 @@ app.add_handler(ConversationHandler(
     states={
         SELECT_MASK: [CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')]
       },
-    fallbacks=[CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')],
-    per_message=False
+    fallbacks=[CallbackQueryHandler(end_inpainting, pattern=f'^{INPAINTING}$')],
+    per_message=True
   ))
 
 app.add_handler(CallbackQueryHandler(button, pattern=f"^(?!{INPAINTING})$"))
