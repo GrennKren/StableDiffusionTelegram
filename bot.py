@@ -1,8 +1,8 @@
 import torch
 from torch import autocast
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_inpaint import preprocess, preprocess_mask
-
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_inpaint import preprocess_image, preprocess_mask
+preprocess = preprocess_image
 from PIL import Image, ImageChops
 
 import os
