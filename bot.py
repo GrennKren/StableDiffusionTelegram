@@ -4,7 +4,7 @@ from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, S
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import preprocess
 #from image_to_image import preprocess
 #from StableDiffusionImg2ImgPipeline import preprocess
-from PIL import Image
+from PIL import Image, ImageChops
 
 import os
 from dotenv import load_dotenv
@@ -173,9 +173,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               base_inpaint = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               base_inpaint = base_inpaint.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               base_inpaint = preprocess(base_inpaint)
-              init_blackwhite_mask = cv2.threshold(cv2.cvtColor(np.asarray(init_image), cv2.COLOR_RGB2GRAY), 127, 255, cv2.THRESH_BINARY)[1]
-              init_blackwhite_image = cv2.threshold(cv2.cvtColor(np.asarray(base_inpaint), cv2.COLOR_RGB2GRAY), 127, 255, cv2.THRESH_BINARY)[1]
-              init_mask_area = cv2.bitwise_and(init_blackwhite_image, init_blackwhite_mask)
+              init_blackwhite_mask = init_image.convert(1)
+              init_blackwhite_image = base_inpaint.convert(1)
+              init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
