@@ -339,7 +339,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
       width = query.message.photo[-1].width
       height = query.message.photo[-1].height
     await query.answer()
-    async def generating_image:
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
