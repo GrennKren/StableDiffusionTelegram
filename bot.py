@@ -2,7 +2,7 @@ import torch
 from torch import autocast
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_inpaint import preprocess_image, preprocess_mask
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageOps
 
 import os
 from dotenv import load_dotenv
@@ -291,9 +291,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     
     if context.user_data.get('base_inpaint') is not None:
-      init_image = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
-      init_mask = Image.open(BytesIO(photo)).convert("RGB")
-      mask_area = ImageChops.difference(init_image, init_mask).convert("1")
+      init_image = Image.open(BytesIO(context.user_data['base_inpaint']))
+      init_mask = Image.open(BytesIO(photo))
+      mask_area = ImageChops.difference(ImageOps.grayscale(init_image), ImageOps.grayscale(init_mask)).convert("1")
     #  a1 = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
       
      # a2 = Image.open(BytesIO(photo)).convert("RGB")
