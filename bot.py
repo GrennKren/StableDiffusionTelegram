@@ -172,8 +172,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               base_inpaint = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               base_inpaint = base_inpaint.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               base_inpaint = preprocess(base_inpaint)
-              init_blackwhite_mask = cv2.threshold(cv2.cvtColor(np.asarray(init_image), cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
-              init_blackwhite_image = cv2.threshold(cv2.cvtColor(np.asarray(base_inpaint), cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
+              init_blackwhite_mask = cv2.threshold(cv2.cvtColor(np.asarray(init_image), cv2.COLOR_RGB2GRAY), 127, 255, cv2.THRESH_BINARY)
+              init_blackwhite_image = cv2.threshold(cv2.cvtColor(np.asarray(base_inpaint), cv2.COLOR_RGB2GRAY), 127, 255, cv2.THRESH_BINARY)
               init_mask_area = cv2.bitwise_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
