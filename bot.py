@@ -437,9 +437,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        photo_file = await query.message.photo[-1].get_file()
-       photo = await photo_file.download()
-       print(photo)
-       photo = image_to_bytes(Image.open(photo))
+       photo = await image_to_bytes(Image.open(photo_file.download()))
+       ##print(photo)
+       
        #photo = await photo_file.download_as_bytearray()
        context.user_data['base_inpaint'] = photo
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
