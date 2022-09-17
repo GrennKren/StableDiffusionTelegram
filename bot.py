@@ -419,7 +419,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
-    elif query.data == "INPAINTING" :
+    elif query.data == "INPAINTING":
        photo_file = await query.message.photo[-1].get_file()
        photo = await photo_file.download_as_bytearray
        context.user_data['base_inpaint'] = photo
