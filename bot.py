@@ -64,7 +64,7 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
   except:
     False
   
-
+OTHER_STATE, INPAINTING = "other_state", "in_painting"
 
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
@@ -124,6 +124,7 @@ def get_download_markup():
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
+#def conv_inpainting():
     
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
     seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
@@ -376,7 +377,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
-    elif query.data == "INPAINT" :
+    elif query.data == INPAINTING :
+       
        print("")
        print("query : ")
        print(query)
@@ -401,6 +403,15 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
-app.add_handler(CallbackQueryHandler(button))
+
+
+app.add_handler(ConversationHandler(
+    entry_points=[CallbackQueryHandler(button, pattern=f'^{INPAINTING}$')],
+    states=[
+        INPAINTING: [i]
+      ]
+  ))
+
+app.add_handler(CallbackQueryHandler(button), pattern=f"^(?!{INPAINTING})$")
 
 app.run_polling()
