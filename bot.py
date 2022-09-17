@@ -295,8 +295,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       init_mask = Image.open(BytesIO(photo))
       mask_area = ImageChops.difference(ImageOps.grayscale(init_mask), ImageOps.grayscale(init_mask)).convert("1")
       mask_area2 = ImageChops.difference(init_image.convert("L"), init_mask.convert("L"))
-      mask_area2 = mask_area.point(lambda x : 255 if x > 10 else 0 )
-      mask_area2 = mask_area.convert("1")
+      mask_area2 = mask_area2.point(lambda x : 255 if x > 10 else 0 )
+      mask_area2 = mask_area2.convert("1")
     #  a1 = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
       
      # a2 = Image.open(BytesIO(photo)).convert("RGB")
