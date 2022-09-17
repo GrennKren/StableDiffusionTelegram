@@ -422,7 +422,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "INPAINT":
        photo_file = await query.message.photo[-1].get_file()
        photo = await photo_file.download_as_bytearray()
-       context.user_data['base_inpaint'] = await photo
+       context.user_data['base_inpaint'] = photo
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
