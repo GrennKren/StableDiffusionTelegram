@@ -93,7 +93,8 @@ def dummy_checker(images, **kwargs): return images, False
 if not SAFETY_CHECKER:
     pipe.safety_checker = dummy_checker
     img2imgPipe.safety_checker = dummy_checker
-
+    inpaint2imgPipe.safety_checker = dummy_checker
+    
 def isInt(input):
     try:
        int(input)
