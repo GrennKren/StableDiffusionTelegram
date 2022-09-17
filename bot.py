@@ -227,7 +227,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     print("update :")
     print(update)
     
-    print(context)
+    
+    
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     if update.message.caption is None:
@@ -244,7 +246,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
-    progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
+    print("For handling conversation")
+    reply_text = "Inpainting Process..." if  (context.user_data['inpainting_process'] is not None) is True else "Generating image..."
+    
+    progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
     im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
@@ -376,6 +381,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == INPAINTING :
+       context.user_data["inpainting_process"] = True
        await conv_inpainting(update=update, context=context)
        print("")
        print("query : ")
@@ -410,11 +416,11 @@ app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo
 
 
 app.add_handler(ConversationHandler(
-    entry_points=[CallbackQueryHandler(button, pattern=f'^{INPAINTING}$')],
+    entry_points=[CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')],
     states={
-        SELECT_MASK: [MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo)]
+        SELECT_MASK: [CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')]
       },
-    fallbacks=[MessageHandler(filters.TEXT, end_inpainting)],
+    fallbacks=[CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')],
     per_message=False
   ))
 
