@@ -128,7 +128,7 @@ def get_download_markup():
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
     
-def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
+def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
     seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
     generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
     
@@ -151,8 +151,16 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     if photo is not None:
         pipe.to("cpu")
-        img2imgPipe.to("cuda")
-        img2imgPipe.enable_attention_slicing()
+        if inpainting is not None:
+          img2imgPipe.to("cpu")
+          inpaint2imgPipe.to("cuda")
+          inpaint2imgPipe.enable_attention_slicing()
+        else:
+          img2imgPipe.to("cuda")
+          inpaint2imgPipe.to("cpu")
+          img2imgPipe.enable_attention_slicing()
+          
+        
         init_image = Image.open(BytesIO(photo)).convert("RGB")
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
@@ -162,6 +170,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
+            
             images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     strength=u_strength,
@@ -173,7 +182,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     else:
         pipe.to("cuda")
         pipe.enable_attention_slicing()
-        
+        inpaint2imgPipe.to("cpu")
         img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
@@ -261,7 +270,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
-    im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
+    
+    if context.user_data['first_image'] is not None:
+      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
+    else:
+      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
@@ -420,12 +433,7 @@ async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return SELECT_MASK
     
 def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if context.user_data['inpainting_process'] is not None:
-      del context.user_data['inpainting_process']
-    if context.user_data['first_image'] is not None:
-      del context.user_data['first_image']
-    if context.user_data['mask_image'] is not None:
-      del context.user_data['mask_image']
+    context.user_data.clear()
       
     return ConversationHandler.END
 
