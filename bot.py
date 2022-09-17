@@ -169,9 +169,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               init_image = preprocess_image(init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64)) ))
               init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("1")
               init_blackwhite_mask = Image.open(BytesIO(photo)).convert("1")
-              init_blackwhite_mask = preprocess_mask(init_blackwhite_mask.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
               
               init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
+              init_blackwhite_mask = preprocess_mask(init_mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
