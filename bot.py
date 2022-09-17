@@ -269,6 +269,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
     
+    print("update : ")
+    print(update)
+    print()
+    print("prompt")
+    print(update.message.caption)
     prompt = update.message.caption
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
