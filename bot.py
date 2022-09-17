@@ -221,7 +221,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data['inpainting_process'] is not None) is True:
+    if (context.user_data.get('inpainting_process') is not None) is True:
       end_inpainting(update=update, context=context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
@@ -237,7 +237,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data['inpainting_process'] is not None) is True:
+    if (context.user_data.get('inpainting_process') is not None) is True:
       end_inpainting(update=update, context=context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
@@ -281,13 +281,13 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
     print("For handling conversation")
-    reply_text = "Inpainting Process..." if  (context.user_data['inpainting_process'] is not None) is True else "Generating image..."
+    reply_text = "Inpainting Process..." if  (context.user_data.get('inpainting_process') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
     
-    if context.user_data['first_image'] is not None:
+    if context.user_data.get('first_image') is not None:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
     else:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
@@ -296,7 +296,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
  
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data['inpainting_process'] is not None) is True:
+    if (context.user_data.get('inpainting_process') is not None) is True:
       end_inpainting(update=update, context=context)
       
     options = {
@@ -442,9 +442,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-    if context.user_data['first_image'] is not None:
-      if context_data['mask_image'] is None:
-        
+    if context.user_data.get('first_image') is not None:
+      if context_data.get('mask_image') is None:
         await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     return SELECT_MASK
     
