@@ -425,7 +425,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        photo_file = await query.message.photo[-1].get_file()
-       photo = image_to_bytes(Image.open(photo_file.file_path))
+       with open(photo_file.file_path, 'rb') as opened_file:
+           photo = Image.open(opened_file)
        print("")
        print("Photo file")
        print(photo_file)
