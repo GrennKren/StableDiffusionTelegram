@@ -426,7 +426,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "INPAINT":
        photo_file = await query.message.photo[-1].get_file()
        with open(photo_file.file_path, 'rb') as opened_file:
-           photo = Image.open(opened_file).tobytes(())
+           photo = Image.open(opened_file).tobytes()
        print("")
        print("Photo file")
        print(photo_file)
