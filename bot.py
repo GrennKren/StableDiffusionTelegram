@@ -77,15 +77,18 @@ pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, 
        StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
             
 pipe = pipe.to("cpu")
+pipe.enable_attention_slicing()
 
 # load the img2img pipeline
 img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
               StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 img2imgPipe = img2imgPipe.to("cpu")
+img2imgPipe.enable_attention_slicing()
 
 inpaint2imgPipe = StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
               StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 inpaint2imgPipe = inpaint2imgPipe.to("cpu")
+inpaint2imgPipe.enable_attention_slicing()
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
 if not SAFETY_CHECKER:
@@ -151,20 +154,19 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         if inpainting is not None:
           img2imgPipe.to("cpu")
           inpaint2imgPipe.to("cuda")
-          inpaint2imgPipe.enable_attention_slicing()
+          
         else:
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
-          img2imgPipe.enable_attention_slicing()
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
-        
+              init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
+              init_image = preprocess(init_image.resize(u_width - (u_width % 64) , u_height - (u_height % 64) ))
               init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("1")
-              init_blackwhite_image = preprocess(init_blackwhite_image.resize(u_width - (u_width % 64) , u_height - (u_height % 64)))
               init_blackwhite_mask = Image.open(BytesIO(photo)).convert("1")
               init_blackwhite_mask = preprocess_mask(init_blackwhite_mask.resize(u_width - (u_width % 64) , u_height - (u_height % 64) ))
               
@@ -191,7 +193,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
            
     else:
         pipe.to("cuda")
-        pipe.enable_attention_slicing()
         inpaint2imgPipe.to("cpu")
         img2imgPipe.to("cpu")
         with autocast("cuda"):
