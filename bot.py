@@ -410,7 +410,7 @@ app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo
 app.add_handler(ConversationHandler(
     entry_points=[CallbackQueryHandler(button, pattern=f'^{INPAINTING}$')],
     states=[
-        SELECT_MASK: [MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))]
+        SELECT_MASK: [MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo)]
       ],
     fallbacks=[MessageHandler(filters.TEXT, end_inpainting]
   ))
