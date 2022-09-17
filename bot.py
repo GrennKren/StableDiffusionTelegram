@@ -390,6 +390,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
 async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
     await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     return SELECT_MASK
 def end_inpainting():
@@ -412,7 +413,7 @@ app.add_handler(ConversationHandler(
     states={
         SELECT_MASK: [MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo)]
       },
-    fallbacks=[MessageHandler(filters.TEXT, end_inpainting)]
+    fallbacks=[MessageHandler(filters.TEXT, per_message=True, end_inpainting)]
   ))
 
 app.add_handler(CallbackQueryHandler(button, pattern=f"^(?!{INPAINTING})$"))
