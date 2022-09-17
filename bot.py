@@ -223,7 +223,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
       end_inpainting()
-      
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -437,7 +437,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        photo_file = await query.message.photo[-1].get_file()
-       photo = await photo_file.download_as_bytearray()
+       photo = await photo_file.download()
+       #photo = await photo_file.download_as_bytearray()
        context.user_data['base_inpaint'] = photo
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:
