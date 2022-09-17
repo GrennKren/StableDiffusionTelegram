@@ -169,7 +169,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = preprocess(init_image)
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
-              base_inpaint = inpainting['base_inpaint']
+              base_inpaint = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               base_inpaint = base_inpaint.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               base_inpaint = preprocess(base_inpaint)
               init_blackwhite_mask = cv2.threshold(cv2.cvtColor(init_image, cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
