@@ -167,8 +167,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               init_mask = Image.open(BytesIO(photo)).convert("RGB")
-              mask_area = ImageChops.difference(init_image, init_mask).convert("1")
               
+              mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L"))
+              mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 )
+              mask_area = mask_area.convert("1")
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               
               
@@ -291,19 +293,15 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     
     if context.user_data.get('base_inpaint') is not None:
-      init_image = Image.open(BytesIO(context.user_data['base_inpaint']))
-      init_mask = Image.open(BytesIO(photo))
-      mask_area = ImageChops.difference(ImageOps.grayscale(init_mask), ImageOps.grayscale(init_mask)).convert("1")
-      mask_area2 = ImageChops.difference(init_image.convert("L"), init_mask.convert("L"))
-      mask_area2 = mask_area2.point(lambda x : 255 if x > 10 else 0 )
-      mask_area2 = mask_area2.convert("1")
+      
+      
     #  a1 = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
       
      # a2 = Image.open(BytesIO(photo)).convert("RGB")
      # await context.bot.send_photo(update.effective_user.id, image_to_bytes(ImageChops.difference(a1,a2)), caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       #await context.bot.send_photo(update.effective_user.id, ImageCho, caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_area) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_area2) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+      #await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_area) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+      #await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_area2) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
     else:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
