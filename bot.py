@@ -165,23 +165,20 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
               
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
-              init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64)) )
-              #init_image = preprocess_image(init_image)
-              init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("1")
-              init_blackwhite_mask = Image.open(BytesIO(photo)).convert("1")
+              init_mask = Image.open(BytesIO(photo)).convert("RGB")
+              mask_area = ImageChops.difference(init_image, init_mask).convert("1")
               
-              init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
-              init_mask_area = init_mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              print(init_mask_area.size)
+              mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+             
               
               #init_mask_area = preprocess_mask(init_mask_area)
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
-                                    mask_image=init_mask_area,
+                                    mask_image=mask_area,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps)["sample"]
+                                    num_inference_steps=u_num_inference_steps).images
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
                 init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
@@ -191,7 +188,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                      generator=generator, #generator if u_number_images == 1 else None,
                                      strength=u_strength,
                                      guidance_scale=u_guidance_scale,
-                                     num_inference_steps=u_num_inference_steps)["sample"]
+                                     num_inference_steps=u_num_inference_steps).images
+                                     #num_inference_steps=u_num_inference_steps)["sample"]
             
             
            
@@ -206,7 +204,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                           height=u_height - (u_height % 64),
                           width=u_width - (u_width % 64),
                           guidance_scale=u_guidance_scale,
-                          num_inference_steps=u_num_inference_steps)["sample"]
+                          num_inference_steps=u_num_inference_steps).images
             
     images = [images] if type(images) != type([]) else images
     
@@ -292,10 +290,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     
     if context.user_data.get('base_inpaint') is not None:
-      a1 = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
+    #  a1 = Image.open(BytesIO(context.user_data['base_inpaint'])).convert("RGB")
       
-      a2 = Image.open(BytesIO(photo)).convert("RGB")
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(ImageChops.difference(a1,a2)), caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+     # a2 = Image.open(BytesIO(photo)).convert("RGB")
+     # await context.bot.send_photo(update.effective_user.id, image_to_bytes(ImageChops.difference(a1,a2)), caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       #await context.bot.send_photo(update.effective_user.id, ImageCho, caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
      # await context.bot.send_photo(update.effective_user.id, , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
