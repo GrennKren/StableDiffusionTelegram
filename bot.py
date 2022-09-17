@@ -185,7 +185,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
                 init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-                init_image = preprocess_image(init_image)
+                #init_image = preprocess_image(init_image)
                 images = img2imgPipe(prompt=[prompt] * u_number_images, 
                                      init_image=init_image,
                                      generator=generator, #generator if u_number_images == 1 else None,
