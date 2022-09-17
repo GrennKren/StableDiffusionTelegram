@@ -64,7 +64,7 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
   except:
     False
   
-OTHER_STATE, INPAINTING = "other_state", "in_painting"
+SELECT_MASK, INPAINTING = "other_state", "in_painting"
 
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
@@ -115,7 +115,7 @@ def image_to_bytes(image):
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
                 [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
-                [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
+                [InlineKeyboardButton("Inpaint", callback_data=INPAINTING)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -124,7 +124,10 @@ def get_download_markup():
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
-#def conv_inpainting():
+    
+async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+    return SELECT_MASK
     
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
     seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
@@ -378,7 +381,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == INPAINTING :
-       
+       await conv_inpainting(update=update, context=context)
        print("")
        print("query : ")
        print(query)
@@ -408,10 +411,10 @@ app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo
 app.add_handler(ConversationHandler(
     entry_points=[CallbackQueryHandler(button, pattern=f'^{INPAINTING}$')],
     states=[
-        INPAINTING: [i]
+        SELECT_MASK: [i]
       ]
   ))
 
-app.add_handler(CallbackQueryHandler(button), pattern=f"^(?!{INPAINTING})$")
+app.add_handler(CallbackQueryHandler(button, pattern=f"^(?!{INPAINTING})$"))
 
 app.run_polling()
