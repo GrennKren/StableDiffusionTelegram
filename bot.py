@@ -63,9 +63,7 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
       OPTIONS_U = json.load(file)
   except:
     False
-  
-SELECT_MASK, INPAINTING = "other_state", "in_painting"
-
+   
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
@@ -119,7 +117,7 @@ def image_to_bytes(image):
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
                 [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
-                [InlineKeyboardButton("Inpaint", callback_data=INPAINTING)]]
+                [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -170,12 +168,12 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
-            if inpainting is not None:
-              mask_image = inpainting['mask_image']
+            if inpainting is not None and inpainting.get('base_inpaint') is not None:
+              mask_image = init_image
               mask_image = mask_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               mask_image = preprocess(mask_image)
               init_blackwhite_mask = cv2.threshold(cv2.cvtColor(mask_image, cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
-              init_blackwhite_image = cv2.threshold(cv2.cvtColor(init_image, cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
+              init_blackwhite_image = cv2.threshold(cv2.cvtColor(inpainting['base_inpaint'], cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
               init_mask_area = cv2.bitwise_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
@@ -221,8 +219,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data.get('inpainting_process') is not None) is True:
-      end_inpainting(update=update, context=context)
+    if context.user_data.get('base_inpaint') is not None:
+      end_inpainting()
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -237,8 +235,8 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data.get('inpainting_process') is not None) is True:
-      end_inpainting(update=update, context=context)
+    if context.user_data.get('base_inpaint') is not None:
+      end_inpainting()
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -281,13 +279,13 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
     print("For handling conversation")
-    reply_text = "Inpainting Process..." if  (context.user_data.get('inpainting_process') is not None) is True else "Generating image..."
+    reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
     photo = await photo_file.download_as_bytearray()
     
-    if context.user_data.get('first_image') is not None:
+    if context.user_data.get('base_inpaint') is not None:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
     else:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
@@ -296,7 +294,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
  
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if (context.user_data.get('inpainting_process') is not None) is True:
+    if context.user_data.get('base_inpaint') is not None:
       end_inpainting(update=update, context=context)
       
     options = {
@@ -421,31 +419,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
-    elif query.data == INPAINTING :
+    elif query.data == "INPAINTING" :
        photo_file = await query.message.photo[-1].get_file()
        photo = await photo_file.download_as_bytearray
-       context.user_data['inpainting_process'] = True
-       context.user_data['first_image'] = photo
-       print("")
-       print("query : ")
-       print(query)
-       print("")
-       print("replied_message : ")
-       print(replied_message)
-       await conv_inpainting(update=update, context=context)
-       
+       context.user_data['base_inpaint'] = photo
+       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
-async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    query = update.callback_query
-    replied_message = query.message.reply_to_message
-    if context.user_data.get('first_image') is not None:
-      if context_data.get('mask_image') is None:
-        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
-    return SELECT_MASK
     
 def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
@@ -462,16 +445,6 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
-
-
-app.add_handler(ConversationHandler(
-    entry_points=[CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')],
-    states={
-        SELECT_MASK: [CallbackQueryHandler(conv_inpainting, pattern=f'^{INPAINTING}$')]
-      },
-    fallbacks=[CallbackQueryHandler(end_inpainting, pattern=f'^{INPAINTING}$')],
-    per_message=True
-  ))
 
 app.add_handler(CallbackQueryHandler(button))
 
