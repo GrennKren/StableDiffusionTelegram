@@ -1,9 +1,8 @@
 import torch
 from torch import autocast
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import preprocess
-#from image_to_image import preprocess
-#from StableDiffusionImg2ImgPipeline import preprocess
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_inpaint import preprocess, preprocess_mask
+
 from PIL import Image, ImageChops
 
 import os
@@ -157,24 +156,18 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
           img2imgPipe.enable_attention_slicing()
-          
-        
-        init_image = Image.open(BytesIO(photo)).convert("RGB")
         
         downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
-        
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
-        init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-        init_image = preprocess(init_image)
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
+        
+              init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert(1)
+              init_blackwhite_image = preprocess(init_blackwhite_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
+              init_blackwhite_mask = Image.open(BytesIO(photo)).convert(1)
+              init_blackwhite_mask = preprocess_mask(init_blackwhite_mask.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
               
-              base_inpaint = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
-              base_inpaint = base_inpaint.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              base_inpaint = preprocess(base_inpaint)
-              init_blackwhite_mask = init_image.convert(1)
-              init_blackwhite_image = base_inpaint.convert(1)
               init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
@@ -184,9 +177,11 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
             else:
+                init_image = Image.open(BytesIO(photo)).convert("RGB")
+                init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+                init_image = preprocess(init_image)
                 images = img2imgPipe(prompt=[prompt] * u_number_images, 
                                      init_image=init_image,
-                                     
                                      generator=generator, #generator if u_number_images == 1 else None,
                                      strength=u_strength,
                                      guidance_scale=u_guidance_scale,
@@ -201,12 +196,12 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
-                                    generator=generator, #generator if u_number_images == 1 else None,
-                                    strength=u_strength,
-                                    height=u_height - (u_height % 64),
-                                    width=u_width - (u_width % 64),
-                                    guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps)["sample"]
+                          generator=generator, #generator if u_number_images == 1 else None,
+                          strength=u_strength,
+                          height=u_height - (u_height % 64),
+                          width=u_width - (u_width % 64),
+                          guidance_scale=u_guidance_scale,
+                          num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
     
