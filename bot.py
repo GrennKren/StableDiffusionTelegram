@@ -170,12 +170,22 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
         init_image = preprocess(init_image)
         with autocast("cuda"):
-            
-            images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
+            if inpainting is not None:
+              images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
+                                    init_image=init_image,
+                                    mask_image=mask_image,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
+            else:
+                images = img2imgPipe(prompt=[prompt] * u_number_images, 
+                                     init_image=init_image,
+                                     
+                                     generator=generator, #generator if u_number_images == 1 else None,
+                                     strength=u_strength,
+                                     guidance_scale=u_guidance_scale,
+                                     num_inference_steps=u_num_inference_steps)["sample"]
             
             
            
