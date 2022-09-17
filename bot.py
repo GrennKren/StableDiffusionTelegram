@@ -299,7 +299,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
      # a2 = Image.open(BytesIO(photo)).convert("RGB")
      # await context.bot.send_photo(update.effective_user.id, image_to_bytes(ImageChops.difference(a1,a2)), caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       #await context.bot.send_photo(update.effective_user.id, ImageCho, caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_image) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+      await context.bot.send_photo(update.effective_user.id, image_to_bytes(mask_area) , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
     else:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
