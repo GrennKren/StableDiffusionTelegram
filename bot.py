@@ -428,7 +428,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        print("")
        print("Photo file")
        print(photo_file)
-       photo = await Image.open(photo_file.download()).tobytes()
+       photo = BytesIO()
+       await Image.open(photo_file.download(out=photo))
        ##print(photo)
        
        #photo = await photo_file.download_as_bytearray()
