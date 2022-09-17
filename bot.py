@@ -473,6 +473,6 @@ app.add_handler(ConversationHandler(
     per_message=True
   ))
 
-app.add_handler(CallbackQueryHandler(button, pattern=f"^(?!{INPAINTING})$"))
+app.add_handler(CallbackQueryHandler(button, pattern=f"^{INPAINTING}$"))
 
 app.run_polling()
