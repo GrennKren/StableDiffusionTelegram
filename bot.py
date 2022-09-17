@@ -120,14 +120,9 @@ def get_try_again_markup():
     return reply_markup
 
 def get_download_markup():
-    
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
-    
-async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
-    return SELECT_MASK
     
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
     seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
@@ -388,13 +383,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        print("")
        print("replied_message : ")
        print(replied_message)
-       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+       
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
-
+async def conv_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+    return SELECT_MASK
+def end_inpainting():
+    return ConversationHandler.END
 
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
@@ -411,8 +410,9 @@ app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo
 app.add_handler(ConversationHandler(
     entry_points=[CallbackQueryHandler(button, pattern=f'^{INPAINTING}$')],
     states=[
-        SELECT_MASK: [i]
-      ]
+        SELECT_MASK: [MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))]
+      ],
+    fallbacks=[MessageHandler(filters.TEXT, end_inpainting]
   ))
 
 app.add_handler(CallbackQueryHandler(button, pattern=f"^(?!{INPAINTING})$"))
