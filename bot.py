@@ -172,7 +172,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               
               init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
               init_mask_area = init_mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              init_mask_area = preprocess_mask()
+              init_mask_area = preprocess_mask(init_mask_area)
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
