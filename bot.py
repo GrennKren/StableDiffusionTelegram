@@ -164,11 +164,12 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         u_width = ceil(width / downscale)
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
+              print(inpainting)
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
-              init_image = preprocess(init_image.resize(u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              init_image = preprocess_image(init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64)) ))
               init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("1")
               init_blackwhite_mask = Image.open(BytesIO(photo)).convert("1")
-              init_blackwhite_mask = preprocess_mask(init_blackwhite_mask.resize(u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              init_blackwhite_mask = preprocess_mask(init_blackwhite_mask.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
               
               init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
