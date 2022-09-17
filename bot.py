@@ -171,10 +171,13 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         init_image = preprocess(init_image)
         with autocast("cuda"):
             if inpainting is not None:
+              init_blackwhite_mask = cv2.threshold(cv2.cvtColor(inpainting['mask_image'], cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
+              init_blackwhite_image = cv2.threshold(cv2.cvtColor(init_image, cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY)
+              init_mask_area = cv2.bitwise_and(init_blackwhite_image, init_blackwhite_mask)
               images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
-                                    mask_image=mask_image,
+                                    mask_image=init_mask_area,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
                                     num_inference_steps=u_num_inference_steps)["sample"]
