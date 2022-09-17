@@ -86,7 +86,7 @@ img2imgPipe = img2imgPipe.to("cpu")
 img2imgPipe.enable_attention_slicing()
 
 inpaint2imgPipe = StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
-              StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+                  StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 inpaint2imgPipe = inpaint2imgPipe.to("cpu")
 inpaint2imgPipe.enable_attention_slicing()
 # disable safety checker if wanted
@@ -164,7 +164,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         u_width = ceil(width / downscale)
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
-              print(inpainting)
+              
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               init_image = preprocess_image(init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64)) ))
               init_blackwhite_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("1")
@@ -172,7 +172,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               
               init_mask_area = ImageChops.logical_and(init_blackwhite_image, init_blackwhite_mask)
               init_mask_area = preprocess_mask(init_mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) )))
-              images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
+              #images = StableDiffusionInpaintPipeline(prompt=[prompt] * u_number_images,
+              images = StableDiffusionInpaintPipeline(prompt=prompt,
                                     generator=generator, #generator if u_number_images == 1 else None,
                                     init_image=init_image,
                                     mask_image=init_mask_area,
