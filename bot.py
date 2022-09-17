@@ -257,12 +257,6 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{" ".join(context.args[1:])}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("")
-    print("update :")
-    print(update)
-    
-    
-    
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -272,12 +266,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
-    
-    print("update : ")
-    print(update)
-    print()
-    print("prompt")
-    print(update.message.caption)
+  
     prompt = update.message.caption
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
@@ -285,7 +274,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
-    print("For handling conversation")
     reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
