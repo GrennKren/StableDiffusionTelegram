@@ -114,7 +114,7 @@ def image_to_bytes(image):
 
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
-                [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],
+                [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
                 [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
@@ -227,8 +227,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     print("")
     print("update :")
     print(update)
-    print("")
-    print("context :")
+    
     print(context)
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
