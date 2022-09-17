@@ -292,6 +292,12 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo = await photo_file.download_as_bytearray()
     
     if context.user_data.get('base_inpaint') is not None:
+      a1 = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
+      
+      a2 = Image.open(BytesIO(photo)).convert("RGB")
+      await context.bot.send_photo(update.effective_user.id, ImageChops.difference(a1,a2), caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+      #await context.bot.send_photo(update.effective_user.id, ImageCho, caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+     # await context.bot.send_photo(update.effective_user.id, , caption=f'', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
     else:
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
