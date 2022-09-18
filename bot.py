@@ -312,7 +312,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
     }[option]
-    if option == "inpaint" and context.user_data.get('process_inpainting') is None:
+    if (option in ["inpaint","inpainting"]) and context.user_data.get('process_inpainting') is None:
       context.user_data['process_inpainting'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
       return
