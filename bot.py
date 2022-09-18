@@ -264,7 +264,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None and not:
+    if update.message.caption is None:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
