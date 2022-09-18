@@ -125,7 +125,7 @@ def get_try_again_markup():
 
 def get_exit_inpaint_markup():
    keyboard = [[KeyboardButton("/Exit From Inpainting", callback_data="EXIT_INPAINT")]]
-   reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
+   reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
    return reply_markup
    
 def get_download_markup():
