@@ -292,9 +292,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     else:
       photo = await photo_file.download_as_bytearray()
     
-    tmp = Image.open(BytesIO(photo))
-    print(tmp.width)
-    print(tmp.height)
     base_inpaint = context.user_data.get('base_inpaint')
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
