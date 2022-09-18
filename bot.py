@@ -312,7 +312,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "width" : 'WIDTH', 
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN',
-        'inpaint':''
+        'inpaint':'',
         'inpainting:''
     }[option]
     if (option in ["inpaint","inpainting"]) and context.user_data.get('process_inpainting') is None:
