@@ -189,7 +189,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     mask_image=mask_area,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps).images
+                                    #num_inference_steps=u_num_inference_steps).images
+                                    num_inference_steps=u_num_inference_steps)["sample"]
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
                 init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
@@ -198,8 +199,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                      generator=generator, 
                                      strength=u_strength,
                                      guidance_scale=u_guidance_scale,
-                                     num_inference_steps=u_num_inference_steps).images
-                                     #num_inference_steps=u_num_inference_steps)["sample"]
+                                     #num_inference_steps=u_num_inference_steps).images
+                                     num_inference_steps=u_num_inference_steps)["sample"]
             
     else:
         pipe.to("cuda")
@@ -212,7 +213,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                           height=u_height - (u_height % 64),
                           width=u_width - (u_width % 64),
                           guidance_scale=u_guidance_scale,
-                          num_inference_steps=u_num_inference_steps).images
+                          #num_inference_steps=u_num_inference_steps).images
+                          num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
     
