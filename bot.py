@@ -427,7 +427,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
         output_image  = BytesIO()
-        image_opened.save(output_image, 'jpeg', quality=100)
+        image_opened.save(output_image, 'jpeg', quality=70)
         
         ################
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
