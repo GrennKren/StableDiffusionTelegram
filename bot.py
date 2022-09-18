@@ -469,7 +469,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
     
-def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+def end_inpainting() -> bool:
     context.user_data.clear()
     return ReplyKeyboardRemove.remove_keyboard 
 
