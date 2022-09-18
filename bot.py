@@ -134,7 +134,7 @@ def get_download_markup():
     return reply_markup
     
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
-    seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
+    seed = seed if isInt(seed) is True else random.randint(1, 1000000) if seed is None else None
     generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
     
     if OPTIONS_U.get(user_id) == None:
@@ -440,10 +440,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               cv2.imwrite(image_saved, output)
               break
           
-          if output.nbytes < (1024 * 1024 * 1024 * 10): #10MB
-            await context.bot.send_photo(update.effective_user.id, photo=image_saved, caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
-          else:
-            await context.bot.send_photo(update.effective_user.id, photo=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
+          await context.bot.send_photo(update.effective_user.id, photo=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
         else:
           await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id, reply_markup=get_download_markup())
     elif query.data == "DOWNLOAD":
