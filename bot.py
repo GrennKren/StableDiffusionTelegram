@@ -29,14 +29,15 @@ TG_TOKEN = os.getenv('TG_TOKEN')
 MODEL_DATA = os.getenv('MODEL_DATA', 'CompVis/stable-diffusion-v1-4')
 LOW_VRAM_MODE = (os.getenv('LOW_VRAM', 'true').lower() == 'true')
 USE_AUTH_TOKEN = os.getenv('USE_AUTH_TOKEN')
-SAFETY_CHECKER = False if os.getenv('SAFETY_CHECKER', True).lower() == 'false' else True
+SAFETY_CHECKER = (os.getenv('SAFETY_CHECKER', 'true').lower() == 'true')
 HEIGHT = int(os.getenv('HEIGHT', '512'))
 WIDTH = int(os.getenv('WIDTH', '512'))
 NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
 STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
-SCHEDULER = os.getenv('SCHEDULER', None)
+SCHEDULER = os.getenv('SCHEDULER', 'None').lower()
+LIMIT_SIZE = (os.getenv('LIMIT_SIZE', 'true').lower() == 'true')
 
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
@@ -65,8 +66,8 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
 # - K-LMS
-scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "DDIM" else \
-            LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "KLMS" else \
+scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "ddim" else \
+            LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "klms" else \
             None
 
 
