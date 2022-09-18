@@ -291,7 +291,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     base_inpaint = context.user_data.get('base_inpaint')
-    if context.user_data.get('wait_for_base') is True or command is in ["/inpaint","/inpainting"]:
+    if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
       context.user_data['wait_for_base'] = False
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
