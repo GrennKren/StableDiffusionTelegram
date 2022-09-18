@@ -123,7 +123,7 @@ def get_try_again_markup():
     return reply_markup
 
 def get_exit_inpaint_markup():
-   keyboard = [[KeyboardButton("Exit Inpainting", callback_data="EXIT_INPAINT")]]
+   keyboard = [[KeyboardButton("/Exit From Inpainting", callback_data="EXIT_INPAINT")]]
    reply_markup = ReplyKeyboardMarkup(keyboard)
    return reply_markup
    
@@ -303,7 +303,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
       end_inpainting()
+    
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
+    
     if (option in ["inpaint","inpainting"]):
       context.user_data['wait_for_base'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
@@ -317,16 +319,16 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
     }[option]
-    
-    if OPTIONS_U.get(update.message.from_user['id']) == None:
+    if options is not None:
+      if OPTIONS_U.get(update.message.from_user['id']) == None:
         OPTIONS_U[update.message.from_user['id']] = {}
-    if len(context.args) < 1:
+      if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
-        if result == None:
+       if result == None:
             await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
         else:
             await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
-    else:
+      else:
         OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
         
         json_path = '/content/drive/MyDrive/Colab/StableDiffusionTelegram'
@@ -336,6 +338,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         
           
         await update.message.reply_text(f'successfully updated {options} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
+      
     return
             
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -456,9 +459,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
     
-def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     context.user_data.clear()
-    return ReplyKeyboardRemove.remove_keyboard
+    return ReplyKeyboardRemove.remove_keyboard 
 
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
