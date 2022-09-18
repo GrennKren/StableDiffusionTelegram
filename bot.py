@@ -366,8 +366,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         photo = await photo_file.download_as_bytearray()
         
     await query.answer()
-    
-    #progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
+  
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=query.message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
