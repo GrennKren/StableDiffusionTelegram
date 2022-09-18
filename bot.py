@@ -122,6 +122,11 @@ def get_try_again_markup():
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
+def get_exit_inpaint_markup():
+   keyboard = [[KeyboardButton("Exit Inpainting", callback_data="EXIT_INPAINT")]]
+   reply_markup = ReplyKeyboardMarkup(keyboard)
+   return reply_markup
+   
 def get_download_markup():
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -294,7 +299,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
       end_inpainting(update=update, context=context)
-      
+    option = "".join((update.message.text).split(" ")[0][1:]).lower()
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
@@ -303,8 +308,11 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "width" : 'WIDTH', 
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
-    }["".join((update.message.text).split(" ")[0][1:])]
-    
+    }[option]
+    if option == "inpaint":
+      end_inpainting()
+      await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
+      return
     if OPTIONS_U.get(update.message.from_user['id']) == None:
         OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
@@ -331,7 +339,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     if query.data == "EXIT_INPAINT":
       end_inpainting()
-      return ReplyKeyboardRemove.remove_keyboard
+      return
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -432,11 +440,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
+       end_inpainting()
        context.user_data['base_inpaint'] = photo
-       keyboardRemove = [[KeyboardButton("Exit Inpainting", callback_data="EXIT_INPAINT")]]
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id, reply_markup=ReplyKeyboardMarkup(keyboardRemove))
+       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id, reply_markup=get_exit_inpaint_markup())
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
@@ -445,8 +453,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
 def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
-      
-    return ConversationHandler.END
+    return ConversationHandler.END, ReplyKeyboardRemove.remove_keyboard
 
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
