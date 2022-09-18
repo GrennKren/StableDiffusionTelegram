@@ -359,11 +359,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
       height = query.message.photo[-1].height
       
       photo_file = await query.message.photo[-1].get_file()
-      if "0.0.0.0" in SERVER:
-        photo = Image.open(photo_file.file_path)
-        photo = image_to_bytes(photo).read()
-      else:
-        photo = await photo_file.download_as_bytearray()
+      #if "0.0.0.0" in SERVER:
+      #  photo = Image.open(photo_file.file_path)
+      #  photo = image_to_bytes(photo).read()
+      #else:
+      photo = await photo_file.download_as_bytearray()
         
     await query.answer()
   
@@ -371,11 +371,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
-           # if "0.0.0.0" in SERVER:
-              #photo = Image.open(photo_file.file_path)
-             # photo = Image.open(photo_file)
-           #   photo = image_to_bytes(photo).read()
-           # else:
+            if "0.0.0.0" in SERVER:
+              photo = Image.open(photo_file.file_path)
+              photo = Image.open(photo_file)
+              photo = image_to_bytes(photo).read()
+            else:
             photo = await photo_file.download_as_bytearray()
             im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
