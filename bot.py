@@ -261,10 +261,9 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{" ".join(context.args[1:])}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
 
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None:
+    if update.message.caption is None and context.user_data('wait_for_base') is not True and context.user_data.get('base_inpaint') is not None:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
@@ -292,9 +291,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     base_inpaint = context.user_data.get('base_inpaint')
-    if context.user_data.get('process_inpainting') is not None:
+    if context.user_data.get('wait_for_base') is True:
       context.user_data['base_inpaint'] = photo
-      await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+      context.user_data['wait_for_base'] = False
+      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:    
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=base_inpaint if base_inpaint is not None else None)
       for key, value in enumerate(im):
@@ -304,6 +304,10 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     if context.user_data.get('base_inpaint') is not None:
       end_inpainting()
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
+    if (option in ["inpaint","inpainting"]):
+      context.user_data['wait_for_base'] = True
+      await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
+      return
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
@@ -311,14 +315,9 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "number" : 'NUMBER_IMAGES', 
         "width" : 'WIDTH', 
         "height" : 'HEIGHT',
-        "model_esrgan" : 'MODEL_ESRGAN',
-        'inpaint':'',
-        'inpainting':''
+        "model_esrgan" : 'MODEL_ESRGAN'
     }[option]
-    if (option in ["inpaint","inpainting"]) and context.user_data.get('process_inpainting') is None:
-      context.user_data['process_inpainting'] = True
-      await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
-      return
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
         OPTIONS_U[update.message.from_user['id']] = {}
     if len(context.args) < 1:
