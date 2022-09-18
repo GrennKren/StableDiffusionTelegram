@@ -281,7 +281,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
-    photo = await photo_file.download_as_bytearray()
+    if "0.0.0.0" in SERVER:
+      photo = Image.open(photo_file.file_path)
+      photo = image_to_bytes(photo).read()
+    else:
+      photo = await photo_file.download_as_bytearray()
     
     if context.user_data.get('base_inpaint') is not None:
       
