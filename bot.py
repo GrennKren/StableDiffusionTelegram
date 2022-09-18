@@ -263,7 +263,7 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None and context.user_data('wait_for_base') is not True and context.user_data.get('base_inpaint') is not None:
+    if update.message.caption is None and context.user_data.get('wait_for_base') is not True and context.user_data.get('base_inpaint') is not None:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
