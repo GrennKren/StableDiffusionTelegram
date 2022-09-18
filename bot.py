@@ -227,7 +227,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting()
+      end_inpainting(context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -243,7 +243,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting()
+      end_inpainting(context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -303,7 +303,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting()
+      end_inpainting(context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     
@@ -347,7 +347,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     replied_message = query.message.reply_to_message
     
     if query.data == "EXIT_INPAINT":
-      end_inpainting()
+      end_inpainting(context)
       return
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
@@ -458,7 +458,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_document(update.effective_user.id, document=photo, reply_to_message_id=replied_message.message_id)
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     elif query.data == "INPAINT":
-       end_inpainting()
+       end_inpainting(context)
        context.user_data['base_inpaint'] = photo
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
