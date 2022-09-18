@@ -269,7 +269,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
-    print(update)
+   
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
   
