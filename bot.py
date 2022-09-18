@@ -1,12 +1,11 @@
 import torch
 from torch import autocast
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_inpaint import preprocess_image, preprocess_mask
-from PIL import Image, ImageChops, ImageOps
+from PIL import Image, ImageChops
 
 import os
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, ConversationHandler, filters
 from io import BytesIO
 import random
@@ -171,15 +170,15 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               init_mask = Image.open(BytesIO(photo)).convert("RGB")
               
-              mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L"))
-              mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 )
-              mask_area = mask_area.convert("1")
+              # Difference to find which pixel different between two images, 
+              # Convert(L) is to convert to grayscale
+              mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
+              mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
+              mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               
-              
-              #init_mask_area = preprocess_mask(init_mask_area)
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
-                                    generator=generator, #generator if u_number_images == 1 else None,
+                                    generator=generator, 
                                     init_image=init_image,
                                     mask_image=mask_area,
                                     strength=u_strength,
@@ -188,17 +187,14 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
                 init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-                #init_image = preprocess_image(init_image)
                 images = img2imgPipe(prompt=[prompt] * u_number_images, 
                                      init_image=init_image,
-                                     generator=generator, #generator if u_number_images == 1 else None,
+                                     generator=generator, 
                                      strength=u_strength,
                                      guidance_scale=u_guidance_scale,
                                      num_inference_steps=u_num_inference_steps).images
                                      #num_inference_steps=u_num_inference_steps)["sample"]
             
-            
-           
     else:
         pipe.to("cuda")
         inpaint2imgPipe.to("cpu")
@@ -350,7 +346,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
     await query.answer()
     
-    progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
+    #progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
+    progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
@@ -432,6 +429,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        context.user_data['base_inpaint'] = photo
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
