@@ -295,7 +295,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       context.user_data['base_inpaint'] = photo
       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:    
-      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data, inpainting=base_inpaint if base_inpaint is not None else None)
+      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=base_inpaint if base_inpaint is not None else None)
       for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
  
