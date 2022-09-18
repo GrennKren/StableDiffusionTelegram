@@ -345,22 +345,31 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.message.photo is not None:
       width = query.message.photo[-1].width
       height = query.message.photo[-1].height
+      
+      photo_file = await query.message.photo[-1].get_file()
+      if "0.0.0.0" in SERVER:
+        photo = Image.open(photo_file.file_path)
+        photo = image_to_bytes(photo).read()
+      else:
+        photo = await photo_file.download_as_bytearray()
+        
     await query.answer()
+    
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
-            photo = await photo_file.download_as_bytearray()
+            if "0.0.0.0" in SERVER:
+              photo = Image.open(photo_file.file_path)
+              photo = image_to_bytes(photo).read()
+            else:
+              photo = await photo_file.download_as_bytearray()
             im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
-        photo_file = await query.message.photo[-1].get_file()
-        photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
-        photo_file = await query.message.photo[-1].get_file()
-        photo = await photo_file.download_as_bytearray()
         if OPTIONS_U.get(replied_message.chat.id) is None:
             OPTIONS_U[replied_message.chat.id] = {}
             
@@ -427,18 +436,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
-       photo_file = await query.message.photo[-1].get_file()
-      # file_size = photo_file.file_size
-       photo = Image.open(photo_file.file_path)
-       photo = image_to_bytes(photo).read()
-           
-       print("")
-       print("Photo file")
-       print(photo_file)
-       
-       ##print(photo)
-       
-       #photo = await photo_file.download_as_bytearray()
        context.user_data['base_inpaint'] = photo
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:
