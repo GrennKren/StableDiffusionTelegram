@@ -288,20 +288,16 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       photo = image_to_bytes(photo).read()
     else:
       photo = await photo_file.download_as_bytearray()
-      
-    if context.user_data.get('process_inpainting') is not None or  context.user_data.get('base_inpaint') is not None:
-      
-      else:
-        context.user_data['base_inpaint'] = photo
-        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+    
+    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+    base_inpaint = context.user_data.get('base_inpaint')
+    if context.user_data.get('process_inpainting') is not None:
+      context.user_data['base_inpaint'] = photo
+      await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
     else:    
-      if context.user_data.get('base_inpaint') is not None:
-        im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data)
-      else:
-        im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
-        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        for key, value in enumerate(im):
-          await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data, inpainting=base_inpaint if base_inpaint is not None else None)
+      for key, value in enumerate(im):
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
  
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
