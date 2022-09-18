@@ -146,6 +146,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 16 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
+    
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
@@ -159,7 +160,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
         
-        downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
+        #downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
+        downscale = 1
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
         with autocast("cuda"):
