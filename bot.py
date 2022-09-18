@@ -476,7 +476,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
 def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
     context.user_data.clear()
-    return ReplyKeyboardRemove.remove_keyboard 
+    return new ReplyKeyboardRemove()
 
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
