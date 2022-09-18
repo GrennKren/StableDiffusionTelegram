@@ -376,8 +376,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               photo = Image.open(photo_file)
               photo = image_to_bytes(photo).read()
             else:
-            photo = await photo_file.download_as_bytearray()
-            im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+              photo = await photo_file.download_as_bytearray()
+              im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
