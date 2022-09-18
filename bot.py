@@ -160,6 +160,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
         
+        #if want limit photo size to 1024, use this line
         #downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
         downscale = 1
         u_height = ceil(height / downscale)
