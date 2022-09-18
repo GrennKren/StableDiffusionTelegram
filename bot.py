@@ -269,7 +269,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
-    
+    print(update)
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
   
@@ -287,11 +287,14 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     photo_file = await update.message.photo[-1].get_file()
     
     if "0.0.0.0" in SERVER:
-      photo = Image.open(photo_file.file_path)
-      photo = image_to_bytes(photo).read()
+      photo_ = Image.open(photo_file.file_path)
+      photo = image_to_bytes(photo_).read()
     else:
       photo = await photo_file.download_as_bytearray()
     
+    tmp = Image.open(BytesIO(photo))
+    print(tmp.width)
+    print(tmp.height)
     base_inpaint = context.user_data.get('base_inpaint')
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
