@@ -455,7 +455,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        
        filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)
        filename = filename[-1] if len(filename) > 0 else None
-       if filename is not None and os.path.exists(f"{save_locatiob}/{filename}"):
+       if filename is not None and os.path.exists(f"{save_location}/{filename}"):
           await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
        else:
           photo_file = await query.message.photo[-1].get_file()
