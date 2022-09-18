@@ -294,7 +294,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
       context.user_data['wait_for_base'] = False
-      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
     else:    
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=base_inpaint if base_inpaint is not None else None)
       for key, value in enumerate(im):
