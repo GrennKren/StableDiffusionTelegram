@@ -5,7 +5,7 @@ from PIL import Image, ImageChops
 
 import os
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, ConversationHandler, filters
 from io import BytesIO
 import random
@@ -329,6 +329,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     
+    if query.data == "EXIT_INPAINT":
+      end_inpainting()
+      return ReplyKeyboardRemove.remove_keyboard
+    
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
@@ -429,8 +433,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        context.user_data['base_inpaint'] = photo
+       keyboardRemove = [[KeyboardButton("Exit Inpainting", callback_data="EXIT_INPAINT")]]
+       
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id)
+       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id, reply_markup=ReplyKeyboardMarkup(keyboardRemove))
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
@@ -454,5 +460,4 @@ app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_sen
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 
 app.add_handler(CallbackQueryHandler(button))
-
 app.run_polling()
