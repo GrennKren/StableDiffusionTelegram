@@ -415,8 +415,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
           print(query.message)
-          photo
-          cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
+          #photo
+          #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == "UPSCALE4":
