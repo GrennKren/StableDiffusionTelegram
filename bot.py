@@ -297,7 +297,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     else:    
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -416,7 +416,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == "UPSCALE4":
-      
+        
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
@@ -433,9 +433,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if os.path.exists(image_saved) is not True:
               cv2.imwrite(image_saved, output)
               break
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
+          
+          if output.nbytes < (1024 * 1024 * 1024 * 10): #10MB
+            await context.bot.send_photo(update.effective_user.id, photo=image_saved, caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
+          else:
+            await context.bot.send_photo(update.effective_user.id, photo=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
         else:
-          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id, reply_markup=get_download_markup())
     elif query.data == "DOWNLOAD":
        save_location = '/content/output_scaled'
        
@@ -443,10 +447,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        # I just can't figure out how to passing data into keyboardmarkup.
        # callback_data only allow string and 64Bytes lengths.
        
-       filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)[-1]
-       
+       filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)
+       filename = filename[-1] if len(filename) > 0 else None
+       if filename is not None && os.path.exists(f"{save_locatiob}/{filename}"):
+          await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
+       else:
+          photo_file = await query.message.photo[-1].get_file()
+          photo = await photo_file.download_as_bytearray()
+          await context.bot.send_document(update.effective_user.id, document=photo, reply_to_message_id=replied_message.message_id)
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-       await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
     elif query.data == "INPAINT":
        end_inpainting()
        context.user_data['base_inpaint'] = photo
