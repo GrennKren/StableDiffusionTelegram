@@ -427,7 +427,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        photo_file = await query.message.photo[-1].get_file()
        file_size = photo_file.file_size
        with open(photo_file.file_path, 'rb') as opened_file:
-           photo = Image.frombytes(mode="RGB", size=file_size, data=opened_file).tobytes()
+           photo = Image.open(opened_file).tobytes()
        print("")
        print("Photo file")
        print(photo_file)
