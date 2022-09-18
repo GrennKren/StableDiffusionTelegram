@@ -264,7 +264,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None:
+    if update.message.caption is None and not:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
     
@@ -272,8 +272,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     height = update.message.photo[-1].height
   
     prompt = update.message.caption
-    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
-    prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
+    command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
+    seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
+    prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
             
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
@@ -463,7 +464,7 @@ app = ApplicationBuilder() \
  .base_file_url(f"{SERVER}/file/bot") \
  .token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan"], anyCommands))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
