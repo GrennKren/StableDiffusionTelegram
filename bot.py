@@ -324,10 +324,10 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         OPTIONS_U[update.message.from_user['id']] = {}
       if len(context.args) < 1:
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
-       if result == None:
-            await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
+        if result == None:
+          await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
         else:
-            await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
+          await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
       else:
         OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
         
