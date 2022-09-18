@@ -289,7 +289,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     else:
       photo = await photo_file.download_as_bytearray()
     
-    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     base_inpaint = context.user_data.get('base_inpaint')
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
@@ -299,7 +298,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
- 
+    await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+    
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
       end_inpainting()
