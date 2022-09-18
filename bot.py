@@ -476,8 +476,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
 def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
     context.user_data.clear()
-    return new ReplyKeyboardRemove()
-
+    return ReplyKeyboardRemove()
+    
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
  .base_file_url(f"{SERVER}/file/bot") \
