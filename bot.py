@@ -1,7 +1,9 @@
 import torch
 from torch import autocast
+
 from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
 from PIL import Image, ImageChops
+
 
 import os
 from dotenv import load_dotenv
@@ -18,6 +20,7 @@ from gfpgan import GFPGANer
 import sys
 import cv2
 import numpy as np
+
 
 import json
 import re
@@ -36,6 +39,7 @@ NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
 STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
+
 SCHEDULER = os.getenv('SCHEDULER', 'None').lower()
 LIMIT_SIZE = int(os.getenv('LIMIT_SIZE', '1024'))
 
@@ -48,11 +52,13 @@ MODEL_ESRGAN_ARRAY = {
 
 SERVER = str(os.getenv('SERVER', "https://api.telegram.org"))
 
+
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 
 #user variables
 OPTIONS_U = {}
+
 
 OPTION_JSON_FILE = "user_variables.json"
 if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE) is True:
@@ -66,8 +72,10 @@ if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTI
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
 # - K-LMS
+
 scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "ddim" else \
             LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "klms" else \
+
             None
 
 
@@ -118,6 +126,7 @@ def image_to_bytes(image):
 
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
+
                 [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
                 [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -151,6 +160,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_guidance_scale = float(u_guidance_scale) if isFloat(u_guidance_scale) and float(u_guidance_scale) >= 1 and float(u_strength) <= 16 else guidance_scale
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
+    u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
+    u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
     if isInt(LIMIT_SIZE) is True and LIMIT_SIZE > 256:
       limit_size_ = LIMIT_SIZE
@@ -162,6 +173,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     if photo is not None:
         pipe.to("cpu")
+
         if inpainting is not None:
           img2imgPipe.to("cpu")
           inpaint2imgPipe.to("cuda")
@@ -174,6 +186,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
          
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
+
         with autocast("cuda"):
             if inpainting is not None and inpainting.get('base_inpaint') is not None:
               
@@ -195,6 +208,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     guidance_scale=u_guidance_scale,
                                    #num_inference_steps=u_num_inference_steps).images
                                     num_inference_steps=u_num_inference_steps)["sample"]
+
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
                 init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
@@ -219,6 +233,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                           guidance_scale=u_guidance_scale,
                          #num_inference_steps=u_num_inference_steps).images
                           num_inference_steps=u_num_inference_steps)["sample"]
+
             
     images = [images] if type(images) != type([]) else images
     
@@ -240,7 +255,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
-    
+
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -273,6 +288,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
+
    
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
@@ -281,6 +297,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
+
             
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
@@ -289,6 +306,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
+
     
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
@@ -317,6 +335,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
       context.user_data['wait_for_base'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
       return
+
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
@@ -325,11 +344,13 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "width" : 'WIDTH', 
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
+
     }[option]
     if options is not None:
       if OPTIONS_U.get(update.message.from_user['id']) == None:
         OPTIONS_U[update.message.from_user['id']] = {}
       if len(context.args) < 1:
+
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == None:
           await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
@@ -363,6 +384,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.message.photo is not None:
       width = query.message.photo[-1].width
       height = query.message.photo[-1].height
+
       
       photo_file = await query.message.photo[-1].get_file()
       #if "0.0.0.0" in SERVER:
@@ -370,13 +392,14 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
       #  photo = image_to_bytes(photo).read()
       #else:
       photo = await photo_file.download_as_bytearray()
-        
+
     await query.answer()
   
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=query.message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
+
             if "0.0.0.0" in SERVER:
               photo = Image.open(photo_file.file_path)
               photo = Image.open(photo_file)
@@ -389,6 +412,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "VARIATIONS":
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
+
         if OPTIONS_U.get(replied_message.chat.id) is None:
             OPTIONS_U[replied_message.chat.id] = {}
             
@@ -405,6 +429,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         model_path=model_path,
         model=model,
         tile=512,
+
         tile_pad=10,
         pre_pad=0,
         half=False)
@@ -485,6 +510,7 @@ app = ApplicationBuilder() \
  .token(TG_TOKEN).build()
 
 app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
+
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
