@@ -37,7 +37,7 @@ STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
 SCHEDULER = os.getenv('SCHEDULER', 'None').lower()
-LIMIT_SIZE = (os.getenv('LIMIT_SIZE', 'true').lower() == 'true')
+LIMIT_SIZE = int(os.getenv('LIMIT_SIZE', '1024'))
 
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
@@ -152,8 +152,13 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_num_inference_steps = int(u_num_inference_steps) if isInt(u_num_inference_steps) and int(u_num_inference_steps) >= 50 and int(u_num_inference_steps) <= 150 else num_inference_steps
     u_number_images = int(u_number_images) if isInt(u_number_images) and int(u_number_images) >= 1 and int(u_number_images) <= 4 else NUMBER_IMAGES
     
-    u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
-    u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
+    if isInt(LIMIT_SIZE) is True and LIMIT_SIZE > 256:
+      limit_size_ = LIMIT_SIZE
+    else:
+      limit_size_ = 1024
+    
+    u_width = WIDTH if isInt(u_width) is not True else limit_size_ if int(u_width) > limit_size_ else 256 if int(u_width) < 256 else int(u_width)
+    u_height = HEIGHT if isInt(u_height) is not True else limit_size_ if int(u_height) > limit_size_ else 256 if int(u_height) < 256 else int(u_height)
     
     if photo is not None:
         pipe.to("cpu")
@@ -165,9 +170,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
         
-        #if want limit photo size to 1024, use this line
-        #downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
-        downscale = 1
+        downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
+         
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
         with autocast("cuda"):
@@ -176,7 +180,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               init_mask = Image.open(BytesIO(photo)).convert("RGB")
               
-              # Difference to find which pixel different between two images, 
+              # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
               mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
               mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
@@ -189,7 +193,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                     mask_image=mask_area,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
-                                    #num_inference_steps=u_num_inference_steps).images
+                                   #num_inference_steps=u_num_inference_steps).images
                                     num_inference_steps=u_num_inference_steps)["sample"]
             else:
                 init_image = Image.open(BytesIO(photo)).convert("RGB")
@@ -199,7 +203,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                      generator=generator, 
                                      strength=u_strength,
                                      guidance_scale=u_guidance_scale,
-                                     #num_inference_steps=u_num_inference_steps).images
+                                    #num_inference_steps=u_num_inference_steps).images
                                      num_inference_steps=u_num_inference_steps)["sample"]
             
     else:
@@ -213,7 +217,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                           height=u_height - (u_height % 64),
                           width=u_width - (u_width % 64),
                           guidance_scale=u_guidance_scale,
-                          #num_inference_steps=u_num_inference_steps).images
+                         #num_inference_steps=u_num_inference_steps).images
                           num_inference_steps=u_num_inference_steps)["sample"]
             
     images = [images] if type(images) != type([]) else images
