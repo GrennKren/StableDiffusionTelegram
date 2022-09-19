@@ -1,15 +1,14 @@
 import torch
 from torch import autocast
-from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, DDIMScheduler, LMSDiscreteScheduler
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import preprocess
-#from image_to_image import preprocess
-#from StableDiffusionImg2ImgPipeline import preprocess
-from PIL import Image
+
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline, StableDiffusionInpaintPipeline, DDIMScheduler, LMSDiscreteScheduler
+from PIL import Image, ImageChops
+
 
 import os
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, filters
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes, MessageHandler, CommandHandler, ConversationHandler, filters
 from io import BytesIO
 import random
 from math import ceil
@@ -22,6 +21,10 @@ import sys
 import cv2
 import numpy as np
 
+
+import json
+import re
+
 sys.path.insert(0, '../Real-ESRGAN ')
 
 load_dotenv()
@@ -29,14 +32,16 @@ TG_TOKEN = os.getenv('TG_TOKEN')
 MODEL_DATA = os.getenv('MODEL_DATA', 'CompVis/stable-diffusion-v1-4')
 LOW_VRAM_MODE = (os.getenv('LOW_VRAM', 'true').lower() == 'true')
 USE_AUTH_TOKEN = os.getenv('USE_AUTH_TOKEN')
-SAFETY_CHECKER = False if os.getenv('SAFETY_CHECKER', True) == 'False' else True
+SAFETY_CHECKER = (os.getenv('SAFETY_CHECKER', 'true').lower() == 'true')
 HEIGHT = int(os.getenv('HEIGHT', '512'))
 WIDTH = int(os.getenv('WIDTH', '512'))
 NUM_INFERENCE_STEPS = int(os.getenv('NUM_INFERENCE_STEPS', '100'))
 STRENTH = float(os.getenv('STRENTH', '0.75'))
 GUIDANCE_SCALE = float(os.getenv('GUIDANCE_SCALE', '7.5'))
 NUMBER_IMAGES = int(os.getenv('NUMBER_IMAGES', '1'))
-SCHEDULER = os.getenv('SCHEDULER', None)
+
+SCHEDULER = os.getenv('SCHEDULER', 'None').lower()
+LIMIT_SIZE = int(os.getenv('LIMIT_SIZE', '1024'))
 
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
@@ -45,18 +50,32 @@ MODEL_ESRGAN_ARRAY = {
   'generic' : 'RealESRGAN_x4plus.pth'
 }
 
+SERVER = str(os.getenv('SERVER', "https://api.telegram.org"))
+
+
 revision = "fp16" if LOW_VRAM_MODE else None
 torch_dtype = torch.float16 if LOW_VRAM_MODE else None
 
 #user variables
 OPTIONS_U = {}
 
+
+OPTION_JSON_FILE = "user_variables.json"
+if os.path.exists('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE) is True:
+  try:
+    with open('/content/drive/MyDrive/Colab/StableDiffusionTelegram/' + OPTION_JSON_FILE, 'r') as file:
+      OPTIONS_U = json.load(file)
+  except:
+    False
+   
 # Text-to-Image Scheduler 
 # - PLMS from StableDiffusionPipeline (Default)
 # - DDIM 
 # - K-LMS
-scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "DDIM" else \
-            LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "KLMS" else \
+
+scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", clip_sample=False, set_alpha_to_one=False) if SCHEDULER is "ddim" else \
+            LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012,  beta_schedule="scaled_linear") if SCHEDULER is "klms" else \
+
             None
 
 
@@ -65,17 +84,25 @@ pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, 
        StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
             
 pipe = pipe.to("cpu")
+pipe.enable_attention_slicing()
 
 # load the img2img pipeline
-img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
+              StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
 img2imgPipe = img2imgPipe.to("cpu")
+img2imgPipe.enable_attention_slicing()
 
+inpaint2imgPipe = StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
+                  StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
+inpaint2imgPipe = inpaint2imgPipe.to("cpu")
+inpaint2imgPipe.enable_attention_slicing()
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
 if not SAFETY_CHECKER:
     pipe.safety_checker = dummy_checker
     img2imgPipe.safety_checker = dummy_checker
-
+    inpaint2imgPipe.safety_checker = dummy_checker
+    
 def isInt(input):
     try:
        int(input)
@@ -99,13 +126,24 @@ def image_to_bytes(image):
 
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
-                [InlineKeyboardButton("Upscaling", callback_data="UPSCALE4")]]
+
+                [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
+                [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
-
-def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None):
-    seed = seed if isInt(seed) is True else random.randint(1, 10000) if seed is None else None
+def get_exit_inpaint_markup():
+   keyboard = [[KeyboardButton("/Exit From Inpainting", callback_data="EXIT_INPAINT")]]
+   reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+   return reply_markup
+   
+def get_download_markup():
+    keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+    
+def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
+    seed = seed if isInt(seed) is True else random.randint(1, 1000000) if seed is None else None
     generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
     
     if OPTIONS_U.get(user_id) == None:
@@ -125,40 +163,77 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_width = WIDTH if isInt(u_width) is not True else 1024 if int(u_width) > 1024 else 256 if int(u_width) < 256 else int(u_width)
     u_height = HEIGHT if isInt(u_height) is not True else 1024 if int(u_height) > 1024 else 256 if int(u_height) < 256 else int(u_height)
     
+    if isInt(LIMIT_SIZE) is True and LIMIT_SIZE > 256:
+      limit_size_ = LIMIT_SIZE
+    else:
+      limit_size_ = 1024
+    
+    u_width = WIDTH if isInt(u_width) is not True else limit_size_ if int(u_width) > limit_size_ else 256 if int(u_width) < 256 else int(u_width)
+    u_height = HEIGHT if isInt(u_height) is not True else limit_size_ if int(u_height) > limit_size_ else 256 if int(u_height) < 256 else int(u_height)
+    
     if photo is not None:
         pipe.to("cpu")
-        img2imgPipe.to("cuda")
-        img2imgPipe.enable_attention_slicing()
-        init_image = Image.open(BytesIO(photo)).convert("RGB")
+
+        if inpainting is not None:
+          img2imgPipe.to("cpu")
+          inpaint2imgPipe.to("cuda")
+          
+        else:
+          img2imgPipe.to("cuda")
+          inpaint2imgPipe.to("cpu")
         
-        downscale = 1 if max(height, width) <= 1024 else max(height, width) / 1024
-        
+        downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
+         
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
-        init_image = init_image.resize((u_width - (u_width % 8) , u_height - (u_height % 8) ))
-        init_image = preprocess(init_image)
+
         with autocast("cuda"):
-            images = img2imgPipe(prompt=[prompt] * u_number_images, init_image=init_image,
-                                    generator=generator, #generator if u_number_images == 1 else None,
+            if inpainting is not None and inpainting.get('base_inpaint') is not None:
+              
+              init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
+              init_mask = Image.open(BytesIO(photo)).convert("RGB")
+              
+              # Difference to find which pixel are different between two images, 
+              # Convert(L) is to convert to grayscale
+              mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
+              mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
+              mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
+              mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
+                                    generator=generator, 
+                                    init_image=init_image,
+                                    mask_image=mask_area,
                                     strength=u_strength,
                                     guidance_scale=u_guidance_scale,
+                                   #num_inference_steps=u_num_inference_steps).images
                                     num_inference_steps=u_num_inference_steps)["sample"]
+
+            else:
+                init_image = Image.open(BytesIO(photo)).convert("RGB")
+                init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+                images = img2imgPipe(prompt=[prompt] * u_number_images, 
+                                     init_image=init_image,
+                                     generator=generator, 
+                                     strength=u_strength,
+                                     guidance_scale=u_guidance_scale,
+                                    #num_inference_steps=u_num_inference_steps).images
+                                     num_inference_steps=u_num_inference_steps)["sample"]
             
-            
-           
     else:
         pipe.to("cuda")
-        pipe.enable_attention_slicing()
-        
+        inpaint2imgPipe.to("cpu")
         img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
-                                    generator=generator, #generator if u_number_images == 1 else None,
-                                    strength=u_strength,
-                                    height=u_height - (u_height % 64),
-                                    width=u_width - (u_width % 64),
-                                    guidance_scale=u_guidance_scale,
-                                    num_inference_steps=u_num_inference_steps)["sample"]
+                          generator=generator, #generator if u_number_images == 1 else None,
+                          strength=u_strength,
+                          height=u_height - (u_height % 64),
+                          width=u_width - (u_width % 64),
+                          guidance_scale=u_guidance_scale,
+                         #num_inference_steps=u_num_inference_steps).images
+                          num_inference_steps=u_num_inference_steps)["sample"]
+
             
     images = [images] if type(images) != type([]) else images
     
@@ -172,12 +247,15 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data.get('base_inpaint') is not None:
+      end_inpainting(context)
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
-  
+
     progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
     im, seed = generate_image(prompt=update.message.text, number_images=u_number_images, user_id=update.message.from_user['id'])
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -185,6 +263,9 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data.get('base_inpaint') is not None:
+      end_inpainting(context)
+      
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -204,29 +285,57 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None:
+    if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
-    
+
+   
     width = update.message.photo[-1].width
     height = update.message.photo[-1].height
-    
-    prompt = update.message.caption
-    seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
-    prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
+  
+    prompt = update.message.caption or ""
+    command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
+    seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
+    prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
+
             
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
-    progress_msg = await update.message.reply_text("Generating image...", reply_to_message_id=update.message.message_id)
+    reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
+    
+    progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
-    photo = await photo_file.download_as_bytearray()
-    im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'])
+
+    
+    if "0.0.0.0" in SERVER:
+      photo_ = Image.open(photo_file.file_path)
+      photo = image_to_bytes(photo_).read()
+    else:
+      photo = await photo_file.download_as_bytearray()
+    
+    base_inpaint = context.user_data.get('base_inpaint')
+    if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
+      context.user_data['base_inpaint'] = photo
+      context.user_data['wait_for_base'] = False
+      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
+    else:    
+      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
+      for key, value in enumerate(im):
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-    for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
- 
+    
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if context.user_data.get('base_inpaint') is not None:
+      end_inpainting(context)
+    
+    option = "".join((update.message.text).split(" ")[0][1:]).lower()
+    
+    if (option in ["inpaint","inpainting"]):
+      context.user_data['wait_for_base'] = True
+      await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
+      return
+
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
@@ -235,24 +344,38 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "width" : 'WIDTH', 
         "height" : 'HEIGHT',
         "model_esrgan" : 'MODEL_ESRGAN'
-    }["".join((update.message.text).split(" ")[0][1:])]
-    
-    if OPTIONS_U.get(update.message.from_user['id']) == None:
-       OPTIONS_U[update.message.from_user['id']] = {}
-    if len(context.args) < 1:
+
+    }[option]
+    if options is not None:
+      if OPTIONS_U.get(update.message.from_user['id']) == None:
+        OPTIONS_U[update.message.from_user['id']] = {}
+      if len(context.args) < 1:
+
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == None:
-            await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
+          await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
         else:
-            await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
-    else:
+          await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
+      else:
         OPTIONS_U[update.message.from_user['id']][options] = context.args[0]
+        
+        json_path = '/content/drive/MyDrive/Colab/StableDiffusionTelegram'
+        if os.path.exists(f"{json_path}/{OPTION_JSON_FILE}") is True:
+          with open(f"{json_path}/{OPTION_JSON_FILE}", 'w') as file:
+            json.dump(OPTIONS_U, file, indent = 4)
+        
+          
         await update.message.reply_text(f'successfully updated {options} value to {context.args[0]} ', reply_to_message_id=update.message.message_id)
+      
     return
             
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
+    
+    if query.data == "EXIT_INPAINT":
+      end_inpainting(context)
+      return
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -261,22 +384,35 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.message.photo is not None:
       width = query.message.photo[-1].width
       height = query.message.photo[-1].height
+
+      
+      photo_file = await query.message.photo[-1].get_file()
+      #if "0.0.0.0" in SERVER:
+      #  photo = Image.open(photo_file.file_path)
+      #  photo = image_to_bytes(photo).read()
+      #else:
+      photo = await photo_file.download_as_bytearray()
+
     await query.answer()
-    progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=replied_message.message_id)
+  
+    progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=query.message.message_id)
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
-            photo = await photo_file.download_as_bytearray()
-            im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+
+            if "0.0.0.0" in SERVER:
+              photo = Image.open(photo_file.file_path)
+              photo = Image.open(photo_file)
+              photo = image_to_bytes(photo).read()
+            else:
+              photo = await photo_file.download_as_bytearray()
+              im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
-        photo_file = await query.message.photo[-1].get_file()
-        photo = await photo_file.download_as_bytearray()
         im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
-        photo_file = await query.message.photo[-1].get_file()
-        photo = await photo_file.download_as_bytearray()
+
         if OPTIONS_U.get(replied_message.chat.id) is None:
             OPTIONS_U[replied_message.chat.id] = {}
             
@@ -292,7 +428,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         scale=4,
         model_path=model_path,
         model=model,
-        tile=0,
+        tile=512,
+
         tile_pad=10,
         pre_pad=0,
         half=False)
@@ -308,30 +445,76 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
+          print(query.message)
+          #photo
+          #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
-    if query.data == 'UPSCALE4':
-        size = (output.shape[0], output.shape[1])
-        image_opened = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
+    if query.data == "UPSCALE4":
         
-        output_image = BytesIO()
-        image_opened.save(output_image, 'png', quality=100)
+        output_width  = output.shape[0]
+        output_height = output.shape[1]
+        image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
+        output_image  = BytesIO()
+        image_opened.save(output_image, 'jpeg', quality=70)
+        
+        ################
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" (Upscaled)', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+        save_location = '/content/output_scaled'
+        if os.path.exists(save_location):
+          while True:
+            filename = f'{ceil(random.random() * 1000000000000)}.png'
+            image_saved = f'{save_location}/{filename}'
+            if os.path.exists(image_saved) is not True:
+              cv2.imwrite(image_saved, output)
+              break
+          
+          await context.bot.send_photo(update.effective_user.id, photo=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_markup=get_download_markup(), reply_to_message_id=query.message.message_id)
+        else:
+          await context.bot.send_photo(update.effective_user.id, output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id, reply_markup=get_download_markup())
+    elif query.data == "DOWNLOAD":
+       save_location = '/content/output_scaled'
+       
+       # I know.. not too shiny. searching filename on message text.
+       # I just can't figure out how to passing data into keyboardmarkup.
+       # callback_data only allow string and 64Bytes lengths.
+       
+       filename = re.findall("[0-9]+\.?(?:png|jpeg)", query.message.caption)
+       filename = filename[-1] if len(filename) > 0 else None
+       if filename is not None and os.path.exists(f"{save_location}/{filename}"):
+          await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
+       else:
+          photo_file = await query.message.photo[-1].get_file()
+          photo = await photo_file.download_as_bytearray()
+          await context.bot.send_document(update.effective_user.id, document=photo, reply_to_message_id=replied_message.message_id)
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+    elif query.data == "INPAINT":
+       end_inpainting(context)
+       context.user_data['base_inpaint'] = photo
+       
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+       await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id, reply_markup=get_exit_inpaint_markup())
     else:
-        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        for key, value in enumerate(im): 
-           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
-         
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+       for key, value in enumerate(im): 
+          await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
+          
+    
+def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
+    context.user_data.clear()
+    return ReplyKeyboardRemove()
+    
+app = ApplicationBuilder() \
+ .base_url(f"{SERVER}/bot") \
+ .base_file_url(f"{SERVER}/file/bot") \
+ .token(TG_TOKEN).build()
 
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
 
-app = ApplicationBuilder().token(TG_TOKEN).build()
-
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height"], anyCommands))
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
-app.add_handler(CallbackQueryHandler(button))
 
+app.add_handler(CallbackQueryHandler(button))
 app.run_polling()
