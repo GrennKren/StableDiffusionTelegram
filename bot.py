@@ -335,7 +335,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     context = await end_inpainting(update, context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
-    
+    print(option)
     if (option in ["inpaint","inpainting"]):
       context.user_data['wait_for_base'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
