@@ -379,7 +379,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     replied_message = query.message.reply_to_message
     if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
       context = await end_inpainting(update, context)
-      
+    print(query.data)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -518,7 +518,7 @@ app = ApplicationBuilder() \
  .base_file_url(f"{SERVER}/file/bot") \
  .token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting", "exit"], anyCommands))
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
