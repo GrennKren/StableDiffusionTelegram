@@ -389,7 +389,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
       end_inpainting(context)
       
     if query.data == "EXIT_INPAINT":
-      suicide = await context.bot.send_message(update.effective_user.id, reply_markup=ReplyKeyboardMarkup())
+      suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardMarkup())
       await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
@@ -420,7 +420,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             
             
            #im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
-            im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
+            base_inpaint = context.user_data.get('base_inpaint')
+            mask_image = context.user_data.get('mask_image')
+            im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id, inpainting=(context.user_data if base_inpaint is not None and mask_image is not None else None) )
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
