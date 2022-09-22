@@ -125,7 +125,6 @@ def image_to_bytes(image):
 
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
-
                 [InlineKeyboardButton("Upscale", callback_data="UPSCALE4")],\
                 [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -135,7 +134,13 @@ def get_exit_inpaint_markup():
    keyboard = [[KeyboardButton("/Exit From Inpainting", callback_data="EXIT_INPAINT")]]
    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
    return reply_markup
-   
+
+def get_download_tryagain_markup():
+    keyboard = [[InlineKeyboardButton("Try Again", callback_data="TRYAGAIN")],\
+                [InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+    
 def get_download_markup():
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -327,9 +332,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
+      if base_inpaint is not None:
+        context.user_data['mask_image'] = photo
       im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if base_inpaint is not None else None))
       for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_tryagain_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -379,8 +386,9 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-    
-    end_inpainting(context)
+    if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
+      end_inpainting(context)
+      
     if query.data == "EXIT_INPAINT":
       suicide = await context.bot.send_message(update.effective_user.id, reply_markup=ReplyKeyboardMarkup())
       await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
@@ -399,13 +407,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.data == "TRYAGAIN":
         if replied_message.photo is not None and len(replied_message.photo) > 0 and replied_message.caption is not None:
             photo_file = await replied_message.photo[-1].get_file()
-
-            if "0.0.0.0" in SERVER:
-              photo = Image.open(photo_file.file_path)
-              photo = Image.open(photo_file)
-              photo = image_to_bytes(photo).read()
+            
+            if context.user_data.get('mask_image') is not None:
+              photo = context.user_data['mask_image']
             else:
-              photo = await photo_file.download_as_bytearray()
+              end_inpainting()
+              if "0.0.0.0" in SERVER:
+                photo = Image.open(photo_file.file_path)
+                photo = Image.open(photo_file)
+                photo = image_to_bytes(photo).read()
+              else:
+                photo = await photo_file.download_as_bytearray()
+            
+            
            #im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
             im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
