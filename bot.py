@@ -327,7 +327,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
-      im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if context.user_data.get('base_inpaint') is not None else None))
+      im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if base_inpaint is not None else None))
       for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -379,7 +379,11 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
+    
     end_inpainting(context)
+    if query.data == "EXIT_INPAINT":
+      suicide = await context.bot.send_message(update.effective_user.id, reply_markup=ReplyKeyboardMarkup())
+      await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -388,7 +392,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.message.photo is not None:
       photo_file = await query.message.photo[-1].get_file()
       photo = await photo_file.download_as_bytearray()
-
+      
     await query.answer()
   
     progress_msg = await query.message.reply_text("Generating image...", reply_to_message_id=query.message.message_id)
