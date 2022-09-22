@@ -386,15 +386,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
     if query.message.photo is not None:
-      #width = query.message.photo[-1].width
-      #height = query.message.photo[-1].height
-
-      
       photo_file = await query.message.photo[-1].get_file()
-      #if "0.0.0.0" in SERVER:
-      #  photo = Image.open(photo_file.file_path)
-      #  photo = image_to_bytes(photo).read()
-      #else:
       photo = await photo_file.download_as_bytearray()
 
     await query.answer()
