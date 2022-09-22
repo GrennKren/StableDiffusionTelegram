@@ -177,7 +177,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     if photo is not None:
         pipe.to("cpu")
-       if inpainting is not None:
+        if inpainting is not None:
           img2imgPipe.to("cpu")
           inpaint2imgPipe.to("cuda")
           
