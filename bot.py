@@ -181,6 +181,14 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
         
+        if inpainting is not None and inpainting.get('base_inpaint') is not None:
+          photo_ = Image.open(BytesIO(inpainting.get('base_inpaint')))
+        else:
+          photo_ = Image.open(BytesIO(photo))
+          
+        width = photo_.width
+        height = photo_.height
+        
         downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
          
         u_height = ceil(height / downscale)
@@ -289,15 +297,15 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         return
 
    
-    width = update.message.photo[-1].width
-    height = update.message.photo[-1].height
+    #width = update.message.photo[-1].width
+    #height = update.message.photo[-1].height
   
     prompt = update.message.caption or ""
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
 
-            
+    
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
@@ -305,7 +313,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     photo_file = await update.message.photo[-1].get_file()
-
     
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
@@ -318,8 +325,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       context.user_data['base_inpaint'] = photo
       context.user_data['wait_for_base'] = False
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
-    else:    
-      im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
+    else:   
+     #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
+      im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       for key, value in enumerate(im):
         await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -378,8 +386,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
     if query.message.photo is not None:
-      width = query.message.photo[-1].width
-      height = query.message.photo[-1].height
+      #width = query.message.photo[-1].width
+      #height = query.message.photo[-1].height
 
       
       photo_file = await query.message.photo[-1].get_file()
@@ -402,11 +410,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               photo = image_to_bytes(photo).read()
             else:
               photo = await photo_file.download_as_bytearray()
-              im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+           #im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+            im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
         else:
             im, seed = generate_image(prompt, seed=seed, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "VARIATIONS":
-        im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+       #im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
+        im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
     elif query.data == "UPSCALE4":
 
         if OPTIONS_U.get(replied_message.chat.id) is None:
@@ -441,7 +451,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
-          print(query.message)
+          #print(query.message)
           #photo
           #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
