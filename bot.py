@@ -253,7 +253,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting(context)
+      context = end_inpainting(context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -269,7 +269,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting(context)
+      context = end_inpainting(context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -334,7 +334,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      end_inpainting(context)
+      context = end_inpainting(context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     
@@ -380,10 +380,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
-      end_inpainting(context)
+      context = end_inpainting(context)
       
     if query.data == "EXIT_INPAINT":
-      suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardMarkup())
+      suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardRemove())
       await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
@@ -404,7 +404,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if context.user_data.get('mask_image') is not None:
               photo = context.user_data['mask_image']
             else:
-              end_inpainting()
+              context = end_inpainting(context)
               if "0.0.0.0" in SERVER:
                 photo = Image.open(photo_file.file_path)
                 photo = Image.open(photo_file)
@@ -513,7 +513,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
 def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
     context.user_data.clear()
-    return ReplyKeyboardRemove()
+    return context
     
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
