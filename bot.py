@@ -172,7 +172,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     if photo is not None:
         pipe.to("cpu")
-
+        print("kosong" if inpainting is None else "Ada")
         if inpainting is not None:
           img2imgPipe.to("cpu")
           inpaint2imgPipe.to("cuda")
