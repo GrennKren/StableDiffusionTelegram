@@ -382,9 +382,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
       context = end_inpainting(context)
       
-    if query.data == "EXIT_INPAINT":
-      suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardRemove())
-      await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -512,7 +509,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           
     
 def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
-    context.user_data.clear()
+    if len(context.user_data) > 0:
+      suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardRemove())
+      context.user_data.clear()
+      await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     return context
     
 app = ApplicationBuilder() \
