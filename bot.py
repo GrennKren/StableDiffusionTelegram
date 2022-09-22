@@ -135,12 +135,6 @@ def get_exit_inpaint_markup():
    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
    return reply_markup
 
-def get_download_tryagain_markup():
-    keyboard = [[InlineKeyboardButton("Try Again", callback_data="TRYAGAIN")],\
-                [InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    return reply_markup
-    
 def get_download_markup():
     keyboard = [[InlineKeyboardButton("Download", callback_data="DOWNLOAD")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -335,7 +329,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         context.user_data['mask_image'] = photo
       im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if base_inpaint is not None else None))
       for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=(get_download_tryagain_markup() if base_inpaint is not None else get_try_again_markup()), reply_to_message_id=update.message.message_id)
+        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
