@@ -332,8 +332,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(update, context)
+    context = await end_inpainting(update, context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     
