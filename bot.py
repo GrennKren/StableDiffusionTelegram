@@ -253,7 +253,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(context)
+      context = await end_inpainting(update, context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -269,7 +269,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(context)
+      context = await end_inpainting(update, context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -294,7 +294,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
 
-    print(update)
     #width = update.message.photo[-1].width
     #height = update.message.photo[-1].height
   
@@ -322,7 +321,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
       context.user_data['wait_for_base'] = False
-      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id)
+      await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       if base_inpaint is not None:
@@ -334,7 +333,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(context)
+      context = await end_inpainting(update, context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     
@@ -380,7 +379,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
-      context = await end_inpainting(context)
+      context = await end_inpainting(update, context)
       
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
@@ -401,7 +400,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if context.user_data.get('mask_image') is not None:
               photo = context.user_data['mask_image']
             else:
-              context = await end_inpainting(context)
+              context = await end_inpainting(update, context)
               if "0.0.0.0" in SERVER:
                 photo = Image.open(photo_file.file_path)
                 photo = Image.open(photo_file)
@@ -508,7 +507,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
           await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{prompt}" (Seed: {seed[0]})', reply_markup=get_try_again_markup(), reply_to_message_id=replied_message.message_id)
           
     
-async def end_inpainting(context: ContextTypes.DEFAULT_TYPE) -> bool:
+async def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     if len(context.user_data) > 0:
       suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardRemove())
       context.user_data.clear()
