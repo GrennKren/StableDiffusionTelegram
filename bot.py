@@ -336,6 +336,9 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     print(option)
+    if option == "exit":
+      return
+    
     if (option in ["inpaint","inpainting"]):
       context.user_data['wait_for_base'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
@@ -511,7 +514,7 @@ async def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
       suicide = await context.bot.send_message(update.effective_user.id, "Leaving Inpainting", reply_markup=ReplyKeyboardRemove())
       context.user_data.clear()
       await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
-    return context
+    return
     
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
