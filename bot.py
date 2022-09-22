@@ -522,8 +522,8 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REGEX('^(?!Exit from inpainting)$'), generate_and_send_photo))
-app.add_handler(MessageHandler(filters.REGEX('^Exit from inpainting$'),end_inpainting))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
+app.add_handler(MessageHandler(filters.regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 
 app.add_handler(CallbackQueryHandler(button))
