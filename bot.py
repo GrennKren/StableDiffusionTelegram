@@ -131,7 +131,7 @@ def get_try_again_markup():
     return reply_markup
 
 def get_exit_inpaint_markup():
-   keyboard = [[KeyboardButton("/exit From Inpainting", callback_data="EXIT_INPAINT")]]
+   keyboard = [[KeyboardButton("Exit from inpainting")]]
    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
    return reply_markup
 
@@ -380,9 +380,6 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
-    if query.data not in ["EXIT_INPAINT", 'TRYAGAIN']:
-      context = await end_inpainting(update, context)
-    print(query.data)
     
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
@@ -521,11 +518,12 @@ app = ApplicationBuilder() \
  .base_file_url(f"{SERVER}/file/bot") \
  .token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting", "exit"], anyCommands))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_and_send_photo))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.REGEX('^(?!Exit from inpainting)$'), generate_and_send_photo))
+app.add_handler(MessageHandler(filters.REGEX('^Exit from inpainting$'),end_inpainting)
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 
 app.add_handler(CallbackQueryHandler(button))
