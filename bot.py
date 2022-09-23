@@ -490,14 +490,14 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             
         u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
         u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else 'generic'
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=2) if u_model_esrgan == 'anime' else \
-                RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2) 
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
+                RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
         model_path = os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY[u_model_esrgan] if u_model_esrgan is 'anime' else MODEL_ESRGAN_ARRAY['generic']) 
     
         #restorer
         upsampler = RealESRGANer(
-        scale=2,
+        scale=4,
         model_path=model_path,
         model=model,
         tile=512,
@@ -508,7 +508,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             face_enhancer = GFPGANer(
               model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
-              upscale=2,
+              upscale=4,
               arch='RestoreFormer',
               channel_multiplier=2,
               bg_upsampler=upsampler)
@@ -518,7 +518,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
           #photo
           #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
-          output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=2)
+          output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
           
     if query.data == "UPSCALE4":
         output_width  = output.shape[0]
