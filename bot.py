@@ -249,6 +249,12 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     if context.user_data.get('base_inpaint') is not None:
       await end_inpainting(update, context)
     
+    if context.user_data.get('late_photo') is not None:
+      context.user_data['late_prompt'] = update.message.text
+      await generate_and_send_photo_from_photo(update, context)
+      context.user_data.clear()
+      return
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -264,7 +270,13 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
       await end_inpainting(update, context)
-      
+    
+    if context.user_data.get('late_photo') is not None:
+      context.user_data['late_prompt'] = update.message.text
+      await generate_and_send_photo_from_photo(update, context)
+      context.user_data.clear()
+      return
+    
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
     
@@ -284,11 +296,16 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
-    if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
-        await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
+    if update.message.caption is None and context.user_data.get('wait_for_base') is not True and context.user_data.get('late_prompt') is None :
+        if update.message.document is not None:
+          context.user_data['late_photo'] = update.message.document
+          await update.message.reply_text("Now please type in the prompt", reply_to_message_id=update.message.message_id)
+          return
+        else:
+          await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
   
-    prompt = update.message.caption or ""
+    prompt = update.message.caption or context.user_data.get('late_prompt') or ""
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
@@ -302,6 +319,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
     if len(update.message.photo) > 0:
       photo_file = await update.message.photo[-1].get_file()
+    elif context.user_data.get('late_photo'):
+      photo_file = await context.user_data.get('late_photo').get_file()
     else:
       photo_file = await update.message.document.get_file()
     
@@ -331,9 +350,6 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
    
-    if option == "exit":
-      return
-    
     if (option in ["inpaint","inpainting"]):
       context.user_data['wait_for_base'] = True
       await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
