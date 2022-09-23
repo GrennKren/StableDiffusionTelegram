@@ -196,7 +196,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               # So I hope this will fixed it for inpainting document image. Regular img2img.. nope.
               if (init_mask.height > init_mask.width) != (init_image.height > init_image.width):
                 init_image = init_image.transpose(Image.ROTATE_270)
-              
+              init_image
+              init_mask
               # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
               mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
@@ -204,8 +205,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              mask_area.show()
-              init_image.show()
+              print("--------")
+              mask_area
+              init_image
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, 
                                     init_image=init_image,
@@ -334,8 +336,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(photo_.transpose(Image.ROTATE_270) ).read(), caption='', reply_to_message_id=update.message.message_id)
-      await context.bot.send_photo(update.effective_user.id, image_to_bytes(photo_.transpose(Image.ROTATE_90) ).read(), caption='', reply_to_message_id=update.message.message_id)
       photo = image_to_bytes(photo_.transpose(Image.ROTATE_270)).read()
     else:
       photo = await photo_file.download_as_bytearray()
