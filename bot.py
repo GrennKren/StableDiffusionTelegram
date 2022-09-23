@@ -357,7 +357,6 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
       if context.user_data.get('late_photo') is not None:
         context.user_data['late_prompt'] = "/" + option
         await generate_and_send_photo_from_photo(update, context)
-        context.user_data.clear()
       else:
         context.user_data['wait_for_base'] = True
         await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
