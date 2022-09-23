@@ -147,7 +147,7 @@ def restore_image(input):
         channel_multiplier=2,
         bg_upsampler=None)
         
-    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(Image.open(input).tobytes()), -1), has_aligned=False, only_center_face=False, paste_back=True)
+    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input), -1), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
 
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
@@ -563,7 +563,7 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex('^(?:(Exit from inpainting))$'), generate_and_send_photo))
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, generate_and_send_photo_from_photo))
 
