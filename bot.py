@@ -137,24 +137,16 @@ def get_exit_inpaint_markup():
    return reply_markup
 
 def restore_image(input):
-    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=1)
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
     
     #restorer
-    upsampler = RealESRGANer(
-        scale=1,
-        model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['generic']),
-        model=model,
-        tile=512,
-        tile_pad=10,
-        pre_pad=0,
-        half=False)
         
     face_enhancer = GFPGANer(
         model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
         upscale=1,
         arch='RestoreFormer',
         channel_multiplier=2,
-        bg_upsampler=upsampler)
+        bg_upsampler=None)
         
     _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input)), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
