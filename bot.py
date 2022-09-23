@@ -126,6 +126,7 @@ def image_to_bytes(image):
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
                 [InlineKeyboardButton("Upscale", callback_data="UPSCALE4"), InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -165,6 +166,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     if photo is not None:
         pipe.to("cpu")
+
         if inpainting is not None:
           img2imgPipe.to("cpu")
           inpaint2imgPipe.to("cuda")
@@ -172,7 +174,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         else:
           img2imgPipe.to("cuda")
           inpaint2imgPipe.to("cpu")
-        
+
         if inpainting is not None and inpainting.get('base_inpaint') is not None:
           photo_ = Image.open(BytesIO(inpainting.get('base_inpaint')))
         else:
@@ -183,6 +185,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         
         downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
         
+        downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
+         
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
 
@@ -209,8 +213,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
               mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              
-           
+
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, 
                                     init_image=init_image,
@@ -307,6 +310,7 @@ async def generate_and_send_photo_from_seed(update: Update, context: ContextType
 async def generate_and_send_photo_from_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
+       
     if update.message.caption is None and context.user_data.get('wait_for_base') is not True and context.user_data.get('late_prompt') is None :
         if update.message.document is not None:
           context.user_data['late_photo'] = update.message.document
@@ -317,17 +321,18 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         return
   
     prompt = update.message.caption or context.user_data.get('late_prompt') or ""
+    
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
 
-    
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
     reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
+    
     if len(update.message.photo) > 0:
       photo_file = await update.message.photo[-1].get_file()
     elif context.user_data.get('late_photo'):
@@ -346,6 +351,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
       context.user_data['base_inpaint'] = photo
       context.user_data['wait_for_base'] = False
+      
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
@@ -409,6 +415,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     replied_message = query.message.reply_to_message
     
+    if query.data == "EXIT_INPAINT":
+      end_inpainting(context)
+      return
+    
     prompt = replied_message.caption if replied_message.caption != None else replied_message.text 
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
@@ -447,6 +457,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     elif query.data == "VARIATIONS":
        #im, seed = generate_image(prompt, seed=seed, width=width, height=height, photo=photo, number_images=1, user_id=replied_message.chat.id)
         im, seed = generate_image(prompt, seed=seed, photo=photo, number_images=1, user_id=replied_message.chat.id)
+
     elif query.data == "UPSCALE4":
 
         if OPTIONS_U.get(replied_message.chat.id) is None:
@@ -481,6 +492,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
+          print(query.message)
+          #photo
+          #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == "UPSCALE4":
@@ -495,6 +509,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
         await context.bot.send_document(update.effective_user.id, document=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_to_message_id=query.message.message_id)
     elif query.data == "INPAINT":
+
        context.user_data['base_inpaint'] = photo
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
@@ -511,6 +526,7 @@ async def end_inpainting(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
       context.user_data.clear()
       await context.bot.delete_message(chat_id=suicide.chat_id, message_id=suicide.message_id)
     return
+
     
 app = ApplicationBuilder() \
  .base_url(f"{SERVER}/bot") \
@@ -524,6 +540,7 @@ app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, generate_and_send_photo_from_photo))
+
 
 app.add_handler(CallbackQueryHandler(button))
 app.run_polling()
