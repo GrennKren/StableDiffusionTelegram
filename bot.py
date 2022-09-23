@@ -196,10 +196,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               # So I hope this will fixed it for inpainting document image. Regular img2img.. nope.
               if (init_mask.height > init_mask.width) != (init_image.height > init_image.width):
                 init_image = init_image.transpose(Image.ROTATE_270)
-                u_tmp = u_height
-                u_height = u_width
-                u_width = u_tmp
-
           
               # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
@@ -248,7 +244,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     # resize to original form
     images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
-    
+    images.append(init_mask)
+    images.append(init_image)
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
