@@ -137,8 +137,7 @@ def get_exit_inpaint_markup():
    return reply_markup
 
 def restore_image(input):
-    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
-    
+  
     #restorer
         
     face_enhancer = GFPGANer(
@@ -373,6 +372,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
+       restore_image(photo)
        photo = image_to_bytes(Image.open(restore_image(photo))).read()
        await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=replied_message.message_id)
        context.user_data.clear()
