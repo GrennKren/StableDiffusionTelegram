@@ -326,11 +326,12 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     else:
       photo_file = await update.message.document.get_file()
     
+    
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
-      print("width : " + str(photo_.width))
-      print("height: " + str(photo_.height))
-      photo = image_to_bytes(photo_).read()
+      await context.bot.send_photo(update.effective_user.id, image_to_bytes(photo_.transpose(Image.ROTATE_270) ).read(), caption='', reply_to_message_id=update.message.message_id)
+      await context.bot.send_photo(update.effective_user.id, image_to_bytes(photo_.transpose(Image.ROTATE_90) ).read(), caption='', reply_to_message_id=update.message.message_id)
+      photo = image_to_bytes(photo_.transpose(Image.ROTATE_270)).read()
     else:
       photo = await photo_file.download_as_bytearray()
     
