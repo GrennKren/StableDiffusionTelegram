@@ -334,6 +334,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
+      photo = image_to_bytes(photo_).read()
     else:
       photo = await photo_file.download_as_bytearray()
     
