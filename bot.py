@@ -137,11 +137,11 @@ def get_exit_inpaint_markup():
    return reply_markup
 
 def restore_image(input):
-    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=1)
     
     #restorer
     upsampler = RealESRGANer(
-        scale=2,
+        scale=1,
         model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['generic']),
         model=model,
         tile=512,
