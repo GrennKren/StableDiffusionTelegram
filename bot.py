@@ -350,7 +350,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     
     if (option in ["inpaint","inpainting"]):
       if context.user_data.get('late_photo') is not None:
-        context.user_data['late_prompt'] = option
+        context.user_data['late_prompt'] = "/" + option
         await generate_and_send_photo_from_photo(update, context)
         context.user_data.clear()
       else:
