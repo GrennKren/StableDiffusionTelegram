@@ -309,14 +309,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
-    print(prompt)
+
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
-    if command not in ["/inpaint","/inpainting"]:
-      print("length of photo in seconds step : " + str(len(context.user_data.get('base_inpaint'))))
-      print("prompt : prompt")
     reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
@@ -335,9 +332,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     base_inpaint = context.user_data.get('base_inpaint')
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
-      print("Length of Photo : " + str(len(photo)))
       context.user_data['base_inpaint'] = photo
-      print("Length of base_inpaint : " + str(len(context.user_data.get('base_inpaint'))))
       context.user_data['wait_for_base'] = False
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     else:   
