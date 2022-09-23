@@ -147,8 +147,8 @@ def restore_image(input):
         channel_multiplier=2,
         bg_upsampler=None)
     print(type(np.array(input)))
-    cv2.imdecode(np.array(input), -1)
-    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input), -1), has_aligned=False, only_center_face=False, paste_back=True)
+    cv2.imdecode(input, -1)
+    _, _, output = face_enhancer.enhance(cv2.imdecode(input, -1), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
 
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
