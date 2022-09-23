@@ -524,12 +524,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
-        output_image  = BytesIO()
-        image_opened.save(output_image, 'jpeg', quality=80)
+        #output_image  = BytesIO()
+        #image_opened.save(output_image, 'jpeg', quality=80)
         
         ################
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_document(update.effective_user.id, document=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
+        await context.bot.send_document(update.effective_user.id, document=image_to_bytes(image_opened), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
     
     elif query.data == "INPAINT":
        context.user_data['base_inpaint'] = photo
