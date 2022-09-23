@@ -188,9 +188,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         height = photo_.height
         
         downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
-        print("width : " + str(width) )
-        print("height : " + str(height) )
-        print("downscale : " + str(downscale) )
+        
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
 
@@ -243,10 +241,12 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
             
     images = [images] if type(images) != type([]) else images
-    
+    print("width : " + str(u_width) )
+    print("height : " + str(u_height) )
     # resize to original form
     images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
-    
+    print("width out: " + str(images[0].width) )
+    print("height out: " + str(images[0].height) )
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
