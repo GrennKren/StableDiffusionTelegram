@@ -147,7 +147,7 @@ def restore_image(input):
         channel_multiplier=2,
         bg_upsampler=None)
         
-    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input)), has_aligned=False, only_center_face=False, paste_back=True)
+    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input), -1), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
 
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
@@ -372,12 +372,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
-       if "0.0.0.0" in SERVER:
-         photo_ = Image.open(photo_file.file_path)
-         photo = image_to_bytes(photo_)
-       else:
-         photo = await photo_file.download_as_bytearray()
-       restore_image(photo)
        photo = image_to_bytes(Image.fromarray(cv2.cvtColor(restore_image(photo), cv2.COLOR_BGR2RGB))).read()
        await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=replied_message.message_id)
        context.user_data.clear()
