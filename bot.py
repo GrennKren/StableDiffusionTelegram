@@ -246,14 +246,14 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if context.user_data.get('base_inpaint') is not None:
-      await end_inpainting(update, context)
-    
     if context.user_data.get('late_photo') is not None:
       context.user_data['late_prompt'] = update.message.text
       await generate_and_send_photo_from_photo(update, context)
       context.user_data.clear()
       return
+    
+    if context.user_data.get('base_inpaint') is not None:
+      await end_inpainting(update, context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -268,14 +268,14 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
         await context.bot.send_document(update.effective_user.id, document=image_to_bytes(value), caption=f'"{update.message.text}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if context.user_data.get('base_inpaint') is not None:
-      await end_inpainting(update, context)
-    
     if context.user_data.get('late_photo') is not None:
       context.user_data['late_prompt'] = update.message.text
       await generate_and_send_photo_from_photo(update, context)
       context.user_data.clear()
       return
+    
+    if context.user_data.get('base_inpaint') is not None:
+      await end_inpainting(update, context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -346,8 +346,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await end_inpainting(update, context)
-    
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
     
     if (option in ["inpaint","inpainting"]):
@@ -359,7 +357,9 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['wait_for_base'] = True
         await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
       return
-
+    
+    await end_inpainting(update, context)
+    
     options = {
         "steps" : 'NUM_INFERENCE_STEPS' , 
         "strength" : 'STRENTH', 
