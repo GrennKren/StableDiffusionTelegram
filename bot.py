@@ -381,7 +381,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       context.user_data['wait_for_base'] = False
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
-    elif command == "/restore": 
+    elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
        photo = image_to_bytes(Image.open(restore_image(photo))).read()
        await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=replied_message.message_id)
        context.user_data.clear()
