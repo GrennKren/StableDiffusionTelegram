@@ -200,13 +200,16 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                 u_width = u_height
                 u_height = u_tmp
                 
+              init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              init_mask = init_mask.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              
               # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
               mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
               mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
               mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-              init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              
            
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, 
@@ -351,7 +354,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       if base_inpaint is not None:
         context.user_data['mask_image'] = photo
-      print(context.user_data)
+      
       im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if base_inpaint is not None else None))
       for key, value in enumerate(im):
        #await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
