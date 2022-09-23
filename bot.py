@@ -196,7 +196,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               # So I hope this will fixed it for inpainting document image. Regular img2img.. nope.
               if (init_mask.height > init_mask.width) != (init_image.height > init_image.width):
                 init_image = init_image.transpose(Image.ROTATE_270)
-          
+                u_tmp = u_width
+                u_width = u_height
+                u_height = u_tmp
+                
               # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
               mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
