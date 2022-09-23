@@ -529,7 +529,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         
         ################
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_document(update.effective_user.id, document=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_to_message_id=query.message.message_id)
+        await context.bot.send_document(update.effective_user.id, document=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
     
     elif query.data == "INPAINT":
        context.user_data['base_inpaint'] = photo
