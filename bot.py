@@ -371,8 +371,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
-       photo = image_to_bytes(Image.fromarray(cv2.cvtColor(restore_image(bytearray(photo)), cv2.COLOR_BGR2RGB))).read()
-       await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=update.message.message_id)
+       photo = Image.fromarray(cv2.cvtColor(restore_image(bytearray(photo)), cv2.COLOR_BGR2RGB))
+       await context.bot.send_document(update.effective_user.id, document=image_to_bytes(photo), caption='', reply_to_message_id=update.message.message_id)
        context.user_data.clear()
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
