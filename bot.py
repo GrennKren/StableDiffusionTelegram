@@ -199,6 +199,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
               init_image = init_image.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
+              mask_area.show()
+              init_image.show()
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, 
                                     init_image=init_image,
