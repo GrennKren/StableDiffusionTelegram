@@ -309,7 +309,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
-
+    print(prompt)
     
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
