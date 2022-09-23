@@ -241,12 +241,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
             
     images = [images] if type(images) != type([]) else images
-    print("width : " + str(u_width) )
-    print("height : " + str(u_height) )
+    
     # resize to original form
     images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
-    print("width out: " + str(images[0].width) )
-    print("height out: " + str(images[0].height) )
+    
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
@@ -295,9 +293,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if update.message.caption is None and context.user_data.get('wait_for_base') is not True:
         await update.message.reply_text("The photo must contain a text in the caption", reply_to_message_id=update.message.message_id)
         return
-
-    #width = update.message.photo[-1].width
-    #height = update.message.photo[-1].height
   
     prompt = update.message.caption or ""
     command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
@@ -311,7 +306,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
-    photo_file = await update.message.photo[-1].get_file()
+    if len(update.message.photo) > 0:
+      photo_file = await update.message.photo[-1].get_file()
+    else:
+      photo_file = await update.message.document.get_file()
     
     if "0.0.0.0" in SERVER:
       photo_ = Image.open(photo_file.file_path)
@@ -388,8 +386,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     seed = None if prompt.split(" ")[0] != "/seed" else prompt.split(" ")[1]
     prompt = prompt if prompt.split(" ")[0] != "/seed" else " ".join(prompt.split(" ")[2:])
     
-    if query.message.photo is not None:
-      photo_file = await query.message.photo[-1].get_file()
+    if len(query.message.photo) > 0 or query.message.document is not None:
+      if len(query.message.photo) > 0:
+        photo_file = await query.message.photo[-1].get_file()
+      else:
+        photo_file = await query.message.document.get_file()
       photo = await photo_file.download_as_bytearray()
       
     await query.answer()
@@ -489,7 +490,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        if filename is not None and os.path.exists(f"{save_location}/{filename}"):
           await context.bot.send_document(update.effective_user.id, document=f'{save_location}/{filename}', reply_to_message_id=replied_message.message_id)
        else:
-          photo_file = await query.message.photo[-1].get_file()
+          if len(query.message.photo) > 0 or query.message.document is not None:
+            if len(query.message.photo) > 0:
+              photo_file = await query.message.photo[-1].get_file()
+            else:
+              photo_file = await query.message.document.get_file()
           await context.bot.send_document(update.effective_user.id, document=photo_file.file_path, reply_to_message_id=replied_message.message_id)
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     elif query.data == "INPAINT":
