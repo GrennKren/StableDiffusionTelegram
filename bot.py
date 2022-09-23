@@ -253,7 +253,7 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
 
 async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(update, context)
+      await end_inpainting(update, context)
     
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -269,7 +269,7 @@ async def generate_and_send_photo(update: Update, context: ContextTypes.DEFAULT_
     
 async def generate_and_send_photo_from_seed(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if context.user_data.get('base_inpaint') is not None:
-      context = await end_inpainting(update, context)
+      await end_inpainting(update, context)
       
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
@@ -332,10 +332,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    context = await end_inpainting(update, context)
+    await end_inpainting(update, context)
     
     option = "".join((update.message.text).split(" ")[0][1:]).lower()
-    print(option)
+   
     if option == "exit":
       return
     
@@ -399,7 +399,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if context.user_data.get('mask_image') is not None:
               photo = context.user_data['mask_image']
             else:
-              context = await end_inpainting(update, context)
+              await end_inpainting(update, context)
               if "0.0.0.0" in SERVER:
                 photo = Image.open(photo_file.file_path)
                 photo = Image.open(photo_file)
