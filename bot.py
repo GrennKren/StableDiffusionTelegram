@@ -146,7 +146,8 @@ def restore_image(input):
         arch='RestoreFormer',
         channel_multiplier=2,
         bg_upsampler=None)
-        
+     np.array(input)
+     cv2.imdecode(np.array(input), -1)
     _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input), -1), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
 
@@ -372,6 +373,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
+       restore_image(photo)
        photo = image_to_bytes(Image.fromarray(cv2.cvtColor(restore_image(photo), cv2.COLOR_BGR2RGB))).read()
        await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=replied_message.message_id)
        context.user_data.clear()
