@@ -314,6 +314,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     u_number_images = OPTIONS_U.get(update.message.from_user['id']).get('NUMBER_IMAGES')
     u_number_images = NUMBER_IMAGES if isInt(u_number_images) is not True else 1 if int(u_number_images) < 1 else 4 if int(u_number_images) > 4 else int(u_number_images)
     
+    if command not in ["/inpaint","/inpainting"]:
+      print("length of photo in seconds step : " + str(len(context.user_data.get('base_inpaint'))))
+      print("prompt : prompt")
     reply_text = "Inpainting Process..." if  (context.user_data.get('base_inpaint') is not None) is True else "Generating image..."
     
     progress_msg = await update.message.reply_text(reply_text, reply_to_message_id=update.message.message_id)
