@@ -330,7 +330,8 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
         context.user_data['mask_image'] = photo
       im, seed = generate_image(prompt=prompt, seed=seed, photo=photo, user_id=update.message.from_user['id'], inpainting=(context.user_data if base_inpaint is not None else None))
       for key, value in enumerate(im):
-        await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+       #await context.bot.send_photo(update.effective_user.id, image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
+        await context.bot.send_document(update.effective_user.id, document=image_to_bytes(value), caption=f'"{update.message.caption}" (Seed: {seed[key]})', reply_markup=get_try_again_markup(), reply_to_message_id=update.message.message_id)
     await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
     
 async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -404,7 +405,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               await end_inpainting(update, context)
               if "0.0.0.0" in SERVER:
                 photo = Image.open(photo_file.file_path)
-                photo = Image.open(photo_file)
                 photo = image_to_bytes(photo).read()
               else:
                 photo = await photo_file.download_as_bytearray()
@@ -521,7 +521,7 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
-app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
+app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, generate_and_send_photo_from_photo))
 
 app.add_handler(CallbackQueryHandler(button))
 app.run_polling()
