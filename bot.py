@@ -188,7 +188,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
         height = photo_.height
         
         downscale = 1 if max(height, width) <= limit_size_ else max(height, width) / limit_size_
-         
+        print("width : " + str(width) )
+        print("height : " + str(height) )
+        print("downscale : " + str(downscale) )
         u_height = ceil(height / downscale)
         u_width = ceil(width / downscale)
 
