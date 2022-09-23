@@ -451,9 +451,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
-          #print(query.message)
-          #photo
-          #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
            
     if query.data == "UPSCALE4":
@@ -522,8 +519,8 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
-app.add_handler(MessageHandler(filters.regex('^Exit from inpainting$'),end_inpainting))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
+app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO, generate_and_send_photo_from_photo))
 
 app.add_handler(CallbackQueryHandler(button))
