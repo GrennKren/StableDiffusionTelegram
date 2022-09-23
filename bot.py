@@ -147,7 +147,7 @@ def restore_image(input):
         channel_multiplier=2,
         bg_upsampler=None)
     print(type(np.array(input)))
-    cv2.imdecode(input, -1)
+    cv2.imdecode(np.array(input), -1)
     _, _, output = face_enhancer.enhance(cv2.imdecode(input, -1), has_aligned=False, only_center_face=False, paste_back=True)
     return output  
 
