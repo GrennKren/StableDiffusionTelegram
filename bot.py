@@ -192,6 +192,11 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               init_image = Image.open(BytesIO(inpainting['base_inpaint'])).convert("RGB")
               init_mask = Image.open(BytesIO(photo)).convert("RGB")
               
+              # Why do I rotated it? Telegram always rotate the document image. Because, idk. 
+              # So I hope this will fixed it for inpainting document image. Regular img2img.. nope.
+              if (init_mask.height > init_mask.width) != (init_image.height > init_image.width):
+                init_image = init_image.transpose(Image.transpose(Image.ROTATE_270) )
+              
               # Difference to find which pixel are different between two images, 
               # Convert(L) is to convert to grayscale
               mask_area = ImageChops.difference(init_image.convert("L"), init_mask.convert("L")) 
