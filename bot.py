@@ -332,9 +332,9 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     
     base_inpaint = context.user_data.get('base_inpaint')
     if context.user_data.get('wait_for_base') is True or command in ["/inpaint","/inpainting"]:
-      print("Length of Photo : " + len(photo))
+      print("Length of Photo : " + str(len(photo)))
       context.user_data['base_inpaint'] = photo
-      print("Length of base_inpaint : " + len(context.user_data.get('base_inpaint')))
+      print("Length of base_inpaint : " + str(len(context.user_data.get('base_inpaint'))))
       context.user_data['wait_for_base'] = False
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
     else:   
