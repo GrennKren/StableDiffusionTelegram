@@ -45,7 +45,7 @@ LIMIT_SIZE = int(os.getenv('LIMIT_SIZE', '1024'))
 
 MODEL_ESRGAN = str(os.getenv('MODEL_ESRGAN', 'generic')).lower()
 MODEL_ESRGAN_ARRAY = {
-  'face' : 'GFPGANv1.4.pth',
+  'face' : 'RestoreFormer.pth',
   'anime' : 'RealESRGAN_x4plus_anime_6B.pth',
   'generic' : 'RealESRGAN_x4plus.pth'
 }
@@ -125,7 +125,8 @@ def image_to_bytes(image):
 
 def get_try_again_markup():
     keyboard = [[InlineKeyboardButton("Try again", callback_data="TRYAGAIN"), InlineKeyboardButton("Variations", callback_data="VARIATIONS")],\
-                [InlineKeyboardButton("Upscale", callback_data="UPSCALE4"), InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
+                [InlineKeyboardButton("Upscale", callback_data="UPSCALE4"), InlineKeyboardButton("Restore", callback_data="RESTORE")],\
+                [InlineKeyboardButton("Inpaint", callback_data="INPAINT")]]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
@@ -134,7 +135,19 @@ def get_exit_inpaint_markup():
    keyboard = [[KeyboardButton("Exit from inpainting")]]
    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
    return reply_markup
-    
+
+def restore_image(input):
+    #restorer
+        
+    face_enhancer = GFPGANer(
+        model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
+        upscale=1,
+        arch='RestoreFormer',
+        channel_multiplier=2,
+        bg_upsampler=None)
+    _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(input), -1), has_aligned=False, only_center_face=False, paste_back=True)
+    return output  
+
 def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_steps=NUM_INFERENCE_STEPS, strength=STRENTH, guidance_scale=GUIDANCE_SCALE, number_images=None, user_id=None, photo=None, inpainting=None):
     seed = seed if isInt(seed) is True else random.randint(1, 1000000) if seed is None else None
     generator = torch.cuda.manual_seed_all(seed) if seed is not None else None
@@ -311,7 +324,11 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
     if OPTIONS_U.get(update.message.from_user['id']) == None:
        OPTIONS_U[update.message.from_user['id']] = {}
        
-    if update.message.caption is None and context.user_data.get('wait_for_base') is not True and context.user_data.get('late_prompt') is None :
+    if update.message.caption is None and \
+       context.user_data.get('wait_for_base') is not True and \
+       context.user_data.get('late_prompt') is None and \
+       context.user_data.get('wait_for_restore') is not True:
+
         if update.message.document is not None:
           context.user_data['late_photo'] = update.message.document
           await update.message.reply_text("Now please type in the prompt", reply_to_message_id=update.message.message_id)
@@ -322,7 +339,7 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
   
     prompt = update.message.caption or context.user_data.get('late_prompt') or ""
     
-    command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting"] else prompt.split(" ")[0]
+    command = None if prompt.split(" ")[0] not in ["/seed", "/inpaint", "/inpainting", "/restore"] else prompt.split(" ")[0]
     seed = None if command is None else prompt.split(" ")[1] if command == "/seed" else None
     prompt = prompt if command is None else " ".join(prompt.split(" ")[(2 if command == "/seed" else 1):])
 
@@ -353,6 +370,10 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
       context.user_data['wait_for_base'] = False
       
       await update.message.reply_text(f'Now please put a masked image', reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
+    elif command == "/restore" or context.user_data.get('wait_for_restore') is True: 
+       photo = Image.fromarray(cv2.cvtColor(restore_image(bytearray(photo)), cv2.COLOR_BGR2RGB))
+       await context.bot.send_document(update.effective_user.id, document=image_to_bytes(photo), caption='', reply_to_message_id=update.message.message_id)
+       context.user_data.clear()
     else:   
      #im, seed = generate_image(prompt=prompt, seed=seed, width=width, height=height, photo=photo, user_id=update.message.from_user['id'], inpainting=context.user_data if context.user_data is not None else None)
       if base_inpaint is not None:
@@ -375,7 +396,11 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['wait_for_base'] = True
         await update.message.reply_text("Please put the image to start inpainting", reply_to_message_id=update.message.message_id, reply_markup=get_exit_inpaint_markup())
       return
-    
+    elif option == "restore":
+      context.user_data['wait_for_restore'] = True
+      await update.message.reply_text("Please put the image to start restoration", reply_to_message_id=update.message.message_id)
+      return
+
     await end_inpainting(update, context)
     
     options = {
@@ -464,7 +489,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             OPTIONS_U[replied_message.chat.id] = {}
             
         u_model_esrgan = OPTIONS_U[replied_message.chat.id].get('MODEL_ESRGAN')
-        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else 'generic'
+        u_model_esrgan = u_model_esrgan if u_model_esrgan in ['generic','face', 'anime'] else MODEL_ESRGAN
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4) if u_model_esrgan == 'anime' else \
                 RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4) 
         
@@ -476,7 +501,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         model_path=model_path,
         model=model,
         tile=512,
-
         tile_pad=10,
         pre_pad=0,
         half=False)
@@ -485,35 +509,39 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             face_enhancer = GFPGANer(
               model_path=os.path.join('Real-ESRGAN/experiments/pretrained_models', MODEL_ESRGAN_ARRAY['face']),
               upscale=4,
-              arch='clean',
+              arch='RestoreFormer',
               channel_multiplier=2,
               bg_upsampler=upsampler)
-        
+        print(u_model_esrgan)
         if u_model_esrgan == 'face':
-            _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
+            _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo), -1), has_aligned=False, only_center_face=False, paste_back=True)
         else:
-          print(query.message)
           #photo
           #cv2.imdecode(np.asarray(Image.open(photo).tobytes()), -1)
           output, _ = upsampler.enhance(cv2.imdecode(np.asarray(photo), -1), outscale=4)
-           
+          
     if query.data == "UPSCALE4":
-        
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
-        output_image  = BytesIO()
-        image_opened.save(output_image, 'jpeg', quality=80)
+
+        #output_image  = BytesIO()
+        #image_opened.save(output_image, 'jpeg', quality=80)
         
         ################
         await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-        await context.bot.send_document(update.effective_user.id, document=output_image.getvalue(), caption=f'"{prompt}" ( {output_width}x{output_height} | {filename})', reply_to_message_id=query.message.message_id)
+        await context.bot.send_document(update.effective_user.id, document=image_to_bytes(image_opened), caption=f'"{prompt}" ( {output_width}x{output_height})', reply_to_message_id=query.message.message_id)
+    
     elif query.data == "INPAINT":
-
        context.user_data['base_inpaint'] = photo
        
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        await query.message.reply_text(f'Now please put a masked image', reply_to_message_id=replied_message.message_id, reply_markup=get_exit_inpaint_markup())
+    elif query.data == "RESTORE":
+       photo = Image.fromarray(cv2.cvtColor(restore_image(bytearray(photo)), cv2.COLOR_BGR2RGB))
+      #photo = image_to_bytes(Image.open(restore_image(photo))).read()
+       await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
+       await context.bot.send_document(update.effective_user.id, document=image_to_bytes(photo), caption='', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
@@ -533,11 +561,13 @@ app = ApplicationBuilder() \
  .base_file_url(f"{SERVER}/file/bot") \
  .token(TG_TOKEN).build()
 
-app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting"], anyCommands))
+app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number", "width", "height", "model_esrgan", "inpaint", "inpainting", "restore"], anyCommands))
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex('^(?!Exit from inpainting)$'), generate_and_send_photo))
+
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex('^(?:(Exit from inpainting))$'), generate_and_send_photo))
+
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, generate_and_send_photo_from_photo))
 
