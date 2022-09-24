@@ -512,7 +512,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               arch='RestoreFormer',
               channel_multiplier=2,
               bg_upsampler=upsampler)
-        print(u_model_esrgan)
+
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo), -1), has_aligned=False, only_center_face=False, paste_back=True)
         else:
@@ -565,7 +565,6 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex('^(?:(Exit from inpainting))$'), generate_and_send_photo))
 
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
