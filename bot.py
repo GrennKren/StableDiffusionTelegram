@@ -538,7 +538,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
        photo = Image.fromarray(cv2.cvtColor(restore_image(bytearray(photo)), cv2.COLOR_BGR2RGB))
       #photo = image_to_bytes(Image.open(restore_image(photo))).read()
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
-       await context.bot.send_document(update.effective_user.id, document=photo, caption='', reply_to_message_id=replied_message.message_id)
+       await context.bot.send_document(update.effective_user.id, document=image_to_bytes(photo), caption='', reply_to_message_id=replied_message.message_id)
     else:
        await context.bot.delete_message(chat_id=progress_msg.chat_id, message_id=progress_msg.message_id)
        for key, value in enumerate(im): 
