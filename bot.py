@@ -328,7 +328,6 @@ async def generate_and_send_photo_from_photo(update: Update, context: ContextTyp
        context.user_data.get('wait_for_base') is not True and \
        context.user_data.get('late_prompt') is None and \
        context.user_data.get('wait_for_restore') is not True:
-
         if update.message.document is not None:
           context.user_data['late_photo'] = update.message.document
           await update.message.reply_text("Now please type in the prompt", reply_to_message_id=update.message.message_id)
@@ -400,7 +399,6 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
       context.user_data['wait_for_restore'] = True
       await update.message.reply_text("Please put the image to start restoration", reply_to_message_id=update.message.message_id)
       return
-
     await end_inpainting(update, context)
     
     options = {
@@ -512,7 +510,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               arch='RestoreFormer',
               channel_multiplier=2,
               bg_upsampler=upsampler)
-        print(u_model_esrgan)
+    
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo), -1), has_aligned=False, only_center_face=False, paste_back=True)
         else:
@@ -524,7 +522,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         output_width  = output.shape[0]
         output_height = output.shape[1]
         image_opened  = Image.fromarray(cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
-
         #output_image  = BytesIO()
         #image_opened.save(output_image, 'jpeg', quality=80)
         
@@ -565,9 +562,7 @@ app.add_handler(CommandHandler(["steps", "strength", "guidance_scale", "number",
 
 
 app.add_handler(CommandHandler("seed", generate_and_send_photo_from_seed))
-
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.Regex('^(?:(Exit from inpainting))$'), generate_and_send_photo))
-
 app.add_handler(MessageHandler(filters.Regex('^Exit from inpainting$'),end_inpainting))
 app.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, generate_and_send_photo_from_photo))
 
