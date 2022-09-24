@@ -510,7 +510,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
               arch='RestoreFormer',
               channel_multiplier=2,
               bg_upsampler=upsampler)
-        
+        print(u_model_esrgan)
         if u_model_esrgan == 'face':
             _, _, output = face_enhancer.enhance(cv2.imdecode(np.array(photo)), has_aligned=False, only_center_face=False, paste_back=True)
         else:
