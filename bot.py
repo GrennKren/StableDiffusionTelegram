@@ -270,8 +270,8 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     # resize to original form
     images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
     
-    images.append(mask_area)
-    images.append(init_image)
+    #images.append(mask_area)
+    #images.append(init_image)
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
