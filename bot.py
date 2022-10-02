@@ -226,7 +226,10 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
               mask_area = mask_area.point(lambda x : 255 if x > 10 else 0 ) #Threshold
               mask_area = mask_area.convert("1") # Convert to binary (only black and white color)
               mask_area = mask_area.resize((u_width - (u_width % 64) , u_height - (u_height % 64) ))
-
+              
+              
+              
+              
               images = inpaint2imgPipe(prompt=[prompt] * u_number_images,
                                     generator=generator, 
                                     init_image=init_image,
@@ -266,6 +269,9 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     
     # resize to original form
     images = [Image.open(image_to_bytes(output_image)).resize((u_width, u_height)) for output_image in images]
+    
+    images.push(image_to_bytes(mask_area))
+    images.push(image_to_bytes(init_image))
     seeds = ["Empty"] * len(images)
     seeds[0] = seed if seed is not None else "Empty"  #seed if u_number_images == 1 and seed is not None else "Empty"
      
@@ -420,7 +426,7 @@ async def anyCommands(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         result = OPTIONS_U.get(update.message.from_user['id']).get(options)
         if result == None:
-          await update.message.reply_text("had not been set", reply_to_message_id=update.message.message_id)
+          await update.message.reply_text(f"had not been set", reply_to_message_id=update.message.message_id)
         else:
           await update.message.reply_text(result, reply_to_message_id=update.message.message_id)
       else:
