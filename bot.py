@@ -82,18 +82,18 @@ scheduler = DDIMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="sca
 pipe = StableDiffusionPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
        StableDiffusionPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
             
-pipe = pipe.to("cpu")
+pipe = pipe.to("cuda")
 pipe.enable_attention_slicing()
 
 # load the img2img pipeline
 img2imgPipe = StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
               StableDiffusionImg2ImgPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
-img2imgPipe = img2imgPipe.to("cpu")
+img2imgPipe = img2imgPipe.to("cuda")
 img2imgPipe.enable_attention_slicing()
 
 inpaint2imgPipe = StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, scheduler=scheduler, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN) if scheduler is not None else \
                   StableDiffusionInpaintPipeline.from_pretrained(MODEL_DATA, revision=revision, torch_dtype=torch_dtype, use_auth_token=USE_AUTH_TOKEN)
-inpaint2imgPipe = inpaint2imgPipe.to("cpu")
+inpaint2imgPipe = inpaint2imgPipe.to("cuda")
 inpaint2imgPipe.enable_attention_slicing()
 # disable safety checker if wanted
 def dummy_checker(images, **kwargs): return images, False
@@ -178,16 +178,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
     u_height = HEIGHT if isInt(u_height) is not True else limit_size_ if int(u_height) > limit_size_ else 256 if int(u_height) < 256 else int(u_height)
     
     if photo is not None:
-        pipe.to("cpu")
-
-        if inpainting is not None:
-          img2imgPipe.to("cpu")
-          inpaint2imgPipe.to("cuda")
-          
-        else:
-          img2imgPipe.to("cuda")
-          inpaint2imgPipe.to("cpu")
-
         if inpainting is not None and inpainting.get('base_inpaint') is not None:
           photo_ = Image.open(BytesIO(inpainting.get('base_inpaint')))
         else:
@@ -251,9 +241,6 @@ def generate_image(prompt, seed=None, height=HEIGHT, width=WIDTH, num_inference_
                                      num_inference_steps=u_num_inference_steps)["sample"]
             
     else:
-        pipe.to("cuda")
-        inpaint2imgPipe.to("cpu")
-        img2imgPipe.to("cpu")
         with autocast("cuda"):
             images = pipe(prompt=[prompt] * u_number_images,
                           generator=generator, #generator if u_number_images == 1 else None,
